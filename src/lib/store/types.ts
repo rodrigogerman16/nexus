@@ -105,6 +105,7 @@ export interface ActivityItem {
   type: ActivityType;
   description: string;
   projectId?: string;
+  taskId?: string;
   createdAt: string;
 }
 

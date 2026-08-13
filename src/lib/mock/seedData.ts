@@ -92,6 +92,7 @@ export const seedTasks: Task[] = [
     projectId: "proj_launch",
     status: "completed",
     priority: "medium",
+    estimatedDurationMinutes: 45,
     tags: [],
     position: 0,
     createdAt: isoAt(-2),
@@ -184,6 +185,7 @@ export const seedTasks: Task[] = [
     status: "completed",
     priority: "low",
     dueDate: isoAt(-1, 9, 0),
+    estimatedDurationMinutes: 30,
     tags: [],
     position: 7,
     createdAt: isoAt(-8),
@@ -446,6 +448,7 @@ export const seedActivities: ActivityItem[] = [
     type: "task_completed",
     description: "Completed \"Book dentist appointment\"",
     projectId: "proj_home",
+    taskId: "task_8",
     createdAt: isoAt(-1, 9, 5),
   },
   {
@@ -467,6 +470,7 @@ export const seedActivities: ActivityItem[] = [
     type: "task_created",
     description: "Created task \"Draft investor update email\"",
     projectId: "proj_launch",
+    taskId: "task_9",
     createdAt: isoAt(-1, 9, 10),
   },
   {
@@ -481,6 +485,14 @@ export const seedActivities: ActivityItem[] = [
     description: "Created project \"Product Launch\"",
     projectId: "proj_launch",
     createdAt: isoAt(-21, 9, 0),
+  },
+  {
+    id: "activity_8",
+    type: "task_completed",
+    description: "Completed \"Rewrite empty states\"",
+    projectId: "proj_launch",
+    taskId: "task_1a",
+    createdAt: isoAt(-2, 10, 30),
   },
 ];
 

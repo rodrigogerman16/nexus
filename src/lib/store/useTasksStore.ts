@@ -43,6 +43,7 @@ export const useTasksStore = create<TasksState>()(
             type: "task_created",
             description: `Created task "${newTask.title}"`,
             projectId: newTask.projectId,
+            taskId: newTask.id,
           });
         }
         return newTask;
@@ -68,6 +69,7 @@ export const useTasksStore = create<TasksState>()(
             type: "task_completed",
             description: `Completed "${task.title}"`,
             projectId: task.projectId,
+            taskId: task.id,
           });
         }
       },
@@ -88,6 +90,7 @@ export const useTasksStore = create<TasksState>()(
             type: "task_completed",
             description: `Completed "${moving.title}"`,
             projectId: moving.projectId,
+            taskId: moving.id,
           });
         }
       },
@@ -150,10 +153,10 @@ export const useTasksStore = create<TasksState>()(
     }),
     {
       name: "acc-tasks-store",
-      // v3 reworked Task status/priority enums (added inbox/completed,
-      // critical) and added parentTaskId/estimatedDurationMinutes/position —
-      // fall back to the current seed data instead of running with an older shape.
-      version: 3,
+      // v4 added estimatedDurationMinutes to a couple of seed tasks so Insights'
+      // focus-time stat has real demo data — fall back to the current seed data
+      // instead of running with an older shape.
+      version: 4,
       migrate: () => ({ tasks: seedTasks, projects: seedProjects }),
     }
   )

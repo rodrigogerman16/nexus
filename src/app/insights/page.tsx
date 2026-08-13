@@ -2,16 +2,33 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, FolderKanban, Sparkles, TrendingUp } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  FolderKanban,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
 import { useTasksStore } from "@/lib/store/useTasksStore";
 import { useLifeStore } from "@/lib/store/useLifeStore";
+import { useActivityStore } from "@/lib/store/useActivityStore";
 import { StatTile } from "@/components/insights/StatTile";
 import { WeeklyCheckInsChart } from "@/components/insights/WeeklyCheckInsChart";
+import { WeeklyActivityChart } from "@/components/insights/WeeklyActivityChart";
+import { ProjectProgressChart } from "@/components/insights/ProjectProgressChart";
+import {
+  computeBestHabitDay,
+  computeFocusTimeMinutes,
+  computeTimeOfDayInsight,
+  formatFocusTime,
+} from "@/lib/ai/insights";
 
 export default function InsightsPage() {
   const tasks = useTasksStore((s) => s.tasks);
   const projects = useTasksStore((s) => s.projects);
   const habits = useLifeStore((s) => s.habits);
+  const activities = useActivityStore((s) => s.activities);
 
   const stats = useMemo(() => {
     const topLevel = tasks.filter((t) => !t.parentTaskId);
@@ -22,43 +39,53 @@ export default function InsightsPage() {
     const overdue = topLevel.filter(
       (t) => t.status !== "completed" && t.dueDate && new Date(t.dueDate) < now
     ).length;
-    return { completed, completionRate, activeProjects, overdue };
+    const focusMinutes = computeFocusTimeMinutes(tasks);
+    return { completed, completionRate, activeProjects, overdue, focusMinutes };
   }, [tasks, projects]);
 
-  const bestDay = useMemo(() => {
-    const totalsByWeekday = [0, 0, 0, 0, 0, 0, 0];
-    for (const habit of habits) {
-      for (const key of Object.keys(habit.completions)) {
-        if (!habit.completions[key]) continue;
-        const weekday = new Date(`${key}T00:00:00`).getDay();
-        totalsByWeekday[weekday] += 1;
-      }
-    }
-    const max = Math.max(...totalsByWeekday);
-    if (max === 0) return null;
-    const weekdayIndex = totalsByWeekday.indexOf(max);
-    const label = new Date(2024, 0, 7 + weekdayIndex).toLocaleDateString(undefined, {
-      weekday: "long",
-    });
-    return label;
-  }, [habits]);
+  const bestDay = useMemo(() => computeBestHabitDay(habits), [habits]);
+  const timeOfDayInsight = useMemo(
+    () => computeTimeOfDayInsight(activities, tasks),
+    [activities, tasks]
+  );
+
+  const insights = [
+    timeOfDayInsight,
+    bestDay
+      ? `You check off the most habits on ${bestDay}s, based on your tracked history. Consider scheduling your hardest habit earlier in the days that tend to slip.`
+      : null,
+  ].filter((i): i is string => i !== null);
 
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-6">
       <h1 className="mb-6 text-lg font-semibold tracking-tight">Insights</h1>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <StatTile label="Tasks completed" value={String(stats.completed)} icon={CheckCircle2} />
         <StatTile label="Completion rate" value={`${stats.completionRate}%`} icon={TrendingUp} />
+        <StatTile label="Focus time" value={formatFocusTime(stats.focusMinutes)} icon={Clock} />
         <StatTile label="Active projects" value={String(stats.activeProjects)} icon={FolderKanban} />
         <StatTile label="Overdue tasks" value={String(stats.overdue)} icon={AlertTriangle} />
       </div>
 
+      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="rounded-md border border-border bg-surface p-4">
+          <h2 className="mb-4 text-sm font-semibold tracking-tight">
+            Weekly activity — tasks completed
+          </h2>
+          <WeeklyActivityChart />
+        </div>
+        <div className="rounded-md border border-border bg-surface p-4">
+          <h2 className="mb-4 text-sm font-semibold tracking-tight">
+            Habit check-ins — last 7 days
+          </h2>
+          <WeeklyCheckInsChart />
+        </div>
+      </div>
+
       <div className="mt-6 rounded-md border border-border bg-surface p-4">
-        <h2 className="mb-4 text-sm font-semibold tracking-tight">
-          Habit check-ins — last 7 days
-        </h2>
-        <WeeklyCheckInsChart />
+        <h2 className="mb-4 text-sm font-semibold tracking-tight">Project progress</h2>
+        <ProjectProgressChart />
       </div>
 
       <div className="bg-grain relative mt-6 overflow-hidden rounded-xl border border-border bg-surface-raised p-5">
@@ -68,16 +95,18 @@ export default function InsightsPage() {
           </div>
           <h3 className="text-sm font-semibold">NEXUS noticed</h3>
         </div>
-        {bestDay ? (
-          <p className="text-sm leading-relaxed text-foreground">
-            You check off the most habits on <span className="font-medium">{bestDay}s</span>,
-            based on the last 30 days of activity. Consider scheduling your hardest habit
-            earlier in the days that tend to slip.
-          </p>
+        {insights.length > 0 ? (
+          <ul className="space-y-3">
+            {insights.map((insight, i) => (
+              <li key={i} className="text-sm leading-relaxed text-foreground">
+                {insight}
+              </li>
+            ))}
+          </ul>
         ) : (
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Keep tracking habits for a few more days and NEXUS will start surfacing patterns
-            here.
+            Keep completing tasks and tracking habits — NEXUS will start surfacing real patterns
+            here once there&rsquo;s enough history to be confident about.
           </p>
         )}
         <Link

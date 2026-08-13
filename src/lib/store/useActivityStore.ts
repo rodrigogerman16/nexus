@@ -25,6 +25,12 @@ export const useActivityStore = create<ActivityState>()(
         return newActivity;
       },
     }),
-    { name: "acc-activity-store" }
+    {
+      name: "acc-activity-store",
+      // v1 added taskId to ActivityItem and backfilled seed entries with it —
+      // fall back to the current seed data instead of running with an older shape.
+      version: 1,
+      migrate: () => ({ activities: seedActivities }),
+    }
   )
 );
