@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  dbEventToEvent,
+  dbNoteToNote,
   dbProjectToProject,
   dbTaskToTask,
+  eventPatchToDbUpdate,
+  eventToDbRow,
+  notePatchToDbUpdate,
+  noteToDbRow,
   projectPatchToDbUpdate,
   projectToDbRow,
   taskPatchToDbUpdate,
@@ -11,6 +17,8 @@ import type { Database } from "@/lib/supabase/types";
 
 type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
+type NoteRow = Database["public"]["Tables"]["notes"]["Row"];
+type EventRow = Database["public"]["Tables"]["calendar_events"]["Row"];
 
 function makeTaskRow(overrides: Partial<TaskRow> = {}): TaskRow {
   return {
@@ -47,6 +55,38 @@ function makeProjectRow(overrides: Partial<ProjectRow> = {}): ProjectRow {
     is_favorite: false,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-02T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function makeNoteRow(overrides: Partial<NoteRow> = {}): NoteRow {
+  return {
+    id: "n1",
+    owner_id: "u1",
+    project_id: null,
+    title: "Note",
+    content: "Some content",
+    tags: [],
+    is_favorite: false,
+    created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function makeEventRow(overrides: Partial<EventRow> = {}): EventRow {
+  return {
+    id: "e1",
+    owner_id: "u1",
+    project_id: null,
+    title: "Event",
+    description: null,
+    start_time: "2026-01-01T09:00:00.000Z",
+    end_time: "2026-01-01T10:00:00.000Z",
+    all_day: false,
+    color: null,
+    created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
     ...overrides,
   };
 }
@@ -172,5 +212,103 @@ describe("projectPatchToDbUpdate", () => {
   it("maps a deadline update", () => {
     const update = projectPatchToDbUpdate({ deadline: "2026-05-01T00:00:00.000Z" });
     expect(update).toEqual({ deadline: "2026-05-01T00:00:00.000Z" });
+  });
+});
+
+describe("dbNoteToNote", () => {
+  it("maps is_favorite to pinned and nulls to undefined", () => {
+    const note = dbNoteToNote(makeNoteRow({ is_favorite: true, project_id: null }));
+    expect(note.pinned).toBe(true);
+    expect(note.projectId).toBeUndefined();
+  });
+
+  it("carries through tags and a populated project_id", () => {
+    const note = dbNoteToNote(makeNoteRow({ tags: ["ideas"], project_id: "p1" }));
+    expect(note.tags).toEqual(["ideas"]);
+    expect(note.projectId).toBe("p1");
+  });
+});
+
+describe("noteToDbRow", () => {
+  it("maps pinned back to is_favorite", () => {
+    const row = noteToDbRow(
+      {
+        id: "n1",
+        title: "Note",
+        content: "Content",
+        tags: [],
+        pinned: true,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+      "u1"
+    );
+    expect(row).toMatchObject({ is_favorite: true, owner_id: "u1", project_id: null });
+  });
+});
+
+describe("notePatchToDbUpdate", () => {
+  it("only includes keys present in the patch", () => {
+    expect(notePatchToDbUpdate({ pinned: false })).toEqual({ is_favorite: false });
+  });
+
+  it("maps a tags update", () => {
+    expect(notePatchToDbUpdate({ tags: ["work", "urgent"] })).toEqual({
+      tags: ["work", "urgent"],
+    });
+  });
+});
+
+describe("dbEventToEvent", () => {
+  it("maps start_time/end_time/all_day to app field names", () => {
+    const event = dbEventToEvent(makeEventRow({ all_day: true }));
+    expect(event).toMatchObject({
+      start: "2026-01-01T09:00:00.000Z",
+      end: "2026-01-01T10:00:00.000Z",
+      allDay: true,
+    });
+  });
+
+  it("maps a null color/description to undefined", () => {
+    const event = dbEventToEvent(makeEventRow());
+    expect(event.color).toBeUndefined();
+    expect(event.description).toBeUndefined();
+  });
+});
+
+describe("eventToDbRow", () => {
+  it("maps app field names back to snake_case, defaulting allDay to false", () => {
+    const row = eventToDbRow(
+      {
+        id: "e1",
+        title: "Standup",
+        start: "2026-01-01T09:00:00.000Z",
+        end: "2026-01-01T09:15:00.000Z",
+      },
+      "u1"
+    );
+    expect(row).toMatchObject({
+      start_time: "2026-01-01T09:00:00.000Z",
+      end_time: "2026-01-01T09:15:00.000Z",
+      all_day: false,
+      owner_id: "u1",
+    });
+  });
+});
+
+describe("eventPatchToDbUpdate", () => {
+  it("only includes keys present in the patch", () => {
+    expect(eventPatchToDbUpdate({ title: "Renamed" })).toEqual({ title: "Renamed" });
+  });
+
+  it("maps start/end patches to snake_case", () => {
+    const update = eventPatchToDbUpdate({
+      start: "2026-02-01T00:00:00.000Z",
+      end: "2026-02-01T01:00:00.000Z",
+    });
+    expect(update).toEqual({
+      start_time: "2026-02-01T00:00:00.000Z",
+      end_time: "2026-02-01T01:00:00.000Z",
+    });
   });
 });

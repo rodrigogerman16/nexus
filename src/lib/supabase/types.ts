@@ -1,6 +1,7 @@
 /**
- * Hand-authored to mirror supabase/migrations/0001_init.sql and
- * 0002_phase12_tasks_projects.sql, in the same shape
+ * Hand-authored to mirror supabase/migrations/0001_init.sql,
+ * 0002_phase12_tasks_projects.sql, and 0003_phase13_notes_tags.sql, in the
+ * same shape
  * `supabase gen types typescript` produces. Once a real project exists,
  * regenerate this file from the live schema with:
  *
@@ -135,6 +136,7 @@ export interface Database {
           project_id: string | null;
           title: string;
           content: string;
+          tags: string[];
           is_favorite: boolean;
           created_at: string;
           updated_at: string;

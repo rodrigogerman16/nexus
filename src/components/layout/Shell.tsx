@@ -11,14 +11,14 @@ import { AppReady } from "@/components/layout/AppReady";
 import { TooltipProvider } from "@/components/ui/Tooltip";
 import { Toaster } from "@/components/ui/Toaster";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import { useHydrateTasksStore } from "@/hooks/useHydrateTasksStore";
+import { useHydrateStores } from "@/hooks/useHydrateStores";
 
 const AUTH_ROUTES = ["/login", "/signup"];
 
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   useKeyboardShortcuts();
-  useHydrateTasksStore();
+  useHydrateStores();
 
   if (AUTH_ROUTES.includes(pathname)) {
     return (

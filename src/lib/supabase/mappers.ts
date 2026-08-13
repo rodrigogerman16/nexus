@@ -1,4 +1,4 @@
-import type { Project, Task } from "@/lib/store/types";
+import type { CalendarEvent, Note, Project, Task } from "@/lib/store/types";
 import type { Database } from "@/lib/supabase/types";
 
 type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
@@ -7,6 +7,12 @@ type TaskUpdate = Database["public"]["Tables"]["tasks"]["Update"];
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 type ProjectInsert = Database["public"]["Tables"]["projects"]["Insert"];
 type ProjectUpdate = Database["public"]["Tables"]["projects"]["Update"];
+type NoteRow = Database["public"]["Tables"]["notes"]["Row"];
+type NoteInsert = Database["public"]["Tables"]["notes"]["Insert"];
+type NoteUpdate = Database["public"]["Tables"]["notes"]["Update"];
+type EventRow = Database["public"]["Tables"]["calendar_events"]["Row"];
+type EventInsert = Database["public"]["Tables"]["calendar_events"]["Insert"];
+type EventUpdate = Database["public"]["Tables"]["calendar_events"]["Update"];
 
 export function dbTaskToTask(row: TaskRow): Task {
   return {
@@ -101,5 +107,80 @@ export function projectPatchToDbUpdate(patch: Partial<Project>): ProjectUpdate {
   if ("status" in patch) update.status = patch.status;
   if ("deadline" in patch) update.deadline = patch.deadline ?? null;
   if ("isFavorite" in patch) update.is_favorite = patch.isFavorite;
+  return update;
+}
+
+export function dbNoteToNote(row: NoteRow): Note {
+  return {
+    id: row.id,
+    title: row.title,
+    content: row.content,
+    tags: row.tags ?? [],
+    pinned: row.is_favorite,
+    projectId: row.project_id ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function noteToDbRow(note: Note, ownerId: string): NoteInsert {
+  return {
+    id: note.id,
+    owner_id: ownerId,
+    project_id: note.projectId ?? null,
+    title: note.title,
+    content: note.content,
+    tags: note.tags,
+    is_favorite: note.pinned,
+    created_at: note.createdAt,
+  };
+}
+
+export function notePatchToDbUpdate(patch: Partial<Note>): NoteUpdate {
+  const update: NoteUpdate = {};
+  if ("title" in patch) update.title = patch.title;
+  if ("content" in patch) update.content = patch.content;
+  if ("tags" in patch) update.tags = patch.tags;
+  if ("pinned" in patch) update.is_favorite = patch.pinned;
+  if ("projectId" in patch) update.project_id = patch.projectId ?? null;
+  return update;
+}
+
+export function dbEventToEvent(row: EventRow): CalendarEvent {
+  return {
+    id: row.id,
+    title: row.title,
+    start: row.start_time,
+    end: row.end_time,
+    allDay: row.all_day,
+    color: row.color ?? undefined,
+    description: row.description ?? undefined,
+    projectId: row.project_id ?? undefined,
+  };
+}
+
+export function eventToDbRow(event: CalendarEvent, ownerId: string): EventInsert {
+  return {
+    id: event.id,
+    owner_id: ownerId,
+    project_id: event.projectId ?? null,
+    title: event.title,
+    description: event.description ?? null,
+    start_time: event.start,
+    end_time: event.end,
+    all_day: event.allDay ?? false,
+    color: event.color ?? null,
+  };
+}
+
+export function eventPatchToDbUpdate(patch: Partial<CalendarEvent>): EventUpdate {
+  const update: EventUpdate = {};
+  if ("title" in patch) update.title = patch.title;
+  if ("description" in patch) update.description = patch.description ?? null;
+  if ("start" in patch) update.start_time = patch.start;
+  if ("end" in patch) update.end_time = patch.end;
+  if ("allDay" in patch) update.all_day = patch.allDay ?? false;
+  if ("color" in patch) update.color = patch.color ?? null;
+  if ("projectId" in patch) update.project_id = patch.projectId ?? null;
   return update;
 }
