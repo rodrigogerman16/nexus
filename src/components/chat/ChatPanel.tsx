@@ -3,12 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { useChatStore } from "@/lib/store/useChatStore";
-import { streamText } from "@/lib/mock/ai";
-import { generateContextualResponse } from "@/lib/ai/service";
+import { askNexus } from "@/lib/ai/ask";
 import { useAIContextStore, contextLabel } from "@/lib/ai/context";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { ChatInput } from "@/components/chat/ChatInput";
-import type { ChatActionChip } from "@/lib/store/types";
 
 export function ChatPanel() {
   const messages = useChatStore((s) => s.messages);
@@ -19,7 +17,6 @@ export function ChatPanel() {
 
   const [thinking, setThinking] = useState(false);
   const [streamedContent, setStreamedContent] = useState("");
-  const pendingActions = useRef<ChatActionChip[] | undefined>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,21 +28,18 @@ export function ChatPanel() {
     setThinking(true);
     setStreaming(true);
 
-    const { content, actions } = generateContextualResponse(text, context);
-    pendingActions.current = actions;
-
-    window.setTimeout(() => {
-      setThinking(false);
-      streamText(
-        content,
-        (soFar) => setStreamedContent(soFar),
-        () => {
-          addMessage("assistant", content, pendingActions.current);
-          setStreamedContent("");
-          setStreaming(false);
-        }
-      );
-    }, 450);
+    askNexus(text, context, {
+      onToken: (soFar) => {
+        setThinking(false);
+        setStreamedContent(soFar);
+      },
+      onDone: ({ content, actions }) => {
+        addMessage("assistant", content, actions);
+        setStreamedContent("");
+        setThinking(false);
+        setStreaming(false);
+      },
+    });
   }
 
   return (

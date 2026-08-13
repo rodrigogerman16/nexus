@@ -5,7 +5,7 @@ import { Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { MarkdownLiteText } from "@/components/ai/MarkdownLiteText";
-import { generateContextualResponse } from "@/lib/ai/service";
+import { askNexus } from "@/lib/ai/ask";
 import type { Project, Task } from "@/lib/store/types";
 
 const suggestedPrompts = ["What should I work on next?", "Why is this behind schedule?"];
@@ -21,13 +21,16 @@ export function ProjectAssistant({ project, tasks }: { project: Project; tasks: 
     setQuestion("");
     setThinking(true);
     setExchange({ question: trimmed, answer: "" });
-    // Small delay so the response doesn't just snap in — reads as "thinking"
-    // without pretending there's a real network round-trip.
-    setTimeout(() => {
-      const { content } = generateContextualResponse(trimmed, { type: "project", project, tasks });
-      setExchange({ question: trimmed, answer: content });
-      setThinking(false);
-    }, 400);
+    askNexus(trimmed, { type: "project", project, tasks }, {
+      onToken: (soFar) => {
+        setThinking(false);
+        setExchange({ question: trimmed, answer: soFar });
+      },
+      onDone: ({ content }) => {
+        setThinking(false);
+        setExchange({ question: trimmed, answer: content });
+      },
+    });
   }
 
   return (

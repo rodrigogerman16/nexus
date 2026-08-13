@@ -19,8 +19,8 @@ import { useUIStore } from "@/lib/store/useUIStore";
 import { useTasksStore } from "@/lib/store/useTasksStore";
 import { useNotesStore } from "@/lib/store/useNotesStore";
 import { useAIContextStore, contextLabel } from "@/lib/ai/context";
-import { generateContextualResponse, suggestedPrompts } from "@/lib/ai/service";
-import { streamText } from "@/lib/mock/ai";
+import { suggestedPrompts } from "@/lib/ai/service";
+import { askNexus } from "@/lib/ai/ask";
 import { MarkdownLiteText } from "@/components/ai/MarkdownLiteText";
 import { navItems } from "@/components/layout/nav";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -92,15 +92,10 @@ export function CommandPalette() {
     if (!trimmed) return;
     stopStreamRef.current?.();
     setAnswer({ question: trimmed, content: "", streaming: true });
-    const { content } = generateContextualResponse(trimmed, context);
-    // Small delay so the response doesn't just snap in.
-    window.setTimeout(() => {
-      stopStreamRef.current = streamText(
-        content,
-        (soFar) => setAnswer({ question: trimmed, content: soFar, streaming: true }),
-        () => setAnswer({ question: trimmed, content, streaming: false })
-      );
-    }, 300);
+    stopStreamRef.current = askNexus(trimmed, context, {
+      onToken: (soFar) => setAnswer({ question: trimmed, content: soFar, streaming: true }),
+      onDone: ({ content }) => setAnswer({ question: trimmed, content, streaming: false }),
+    });
   }
 
   const query = search.trim().toLowerCase();

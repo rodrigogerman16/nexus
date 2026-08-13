@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   CheckSquare,
   Eraser,
@@ -26,6 +26,8 @@ import {
   improveWriting,
   summarizeNote,
 } from "@/lib/ai/noteActions";
+import { noteActionSystemPrompt, type NoteActionKey } from "@/lib/ai/noteActionPrompts";
+import { isRealProviderEnabled, streamRealResponse } from "@/lib/ai/realProvider";
 import type { Note } from "@/lib/store/types";
 
 type ActionKey = "summarize" | "improve" | "extract" | "checklist" | "keypoints" | "explain";
@@ -46,39 +48,57 @@ interface NoteAIActionsProps {
   onAppendContent: (addition: string) => void;
 }
 
+function runMockAction(key: NoteActionKey, content: string, noteTitle: string): string {
+  switch (key) {
+    case "summarize":
+      return summarizeNote(content);
+    case "improve":
+      return improveWriting(content);
+    case "checklist":
+      return generateChecklist(content);
+    case "keypoints":
+      return findKeyPoints(content).map((p) => `- ${p}`).join("\n") || "No clear key points found.";
+    case "explain":
+      return explainNote(content, noteTitle);
+  }
+}
+
 export function NoteAIActions({ note, content, onReplaceContent, onAppendContent }: NoteAIActionsProps) {
   const addTask = useTasksStore((s) => s.addTask);
   const [active, setActive] = useState<ActionKey | null>(null);
   const [textResult, setTextResult] = useState("");
   const [taskCandidates, setTaskCandidates] = useState<{ title: string; selected: boolean }[]>([]);
+  const abortRef = useRef<AbortController | null>(null);
 
   function run(key: ActionKey) {
+    abortRef.current?.abort();
     setActive(key);
-    switch (key) {
-      case "summarize":
-        setTextResult(summarizeNote(content));
-        break;
-      case "improve":
-        setTextResult(improveWriting(content));
-        break;
-      case "checklist":
-        setTextResult(generateChecklist(content));
-        break;
-      case "keypoints":
-        setTextResult(findKeyPoints(content).map((p) => `- ${p}`).join("\n") || "No clear key points found.");
-        break;
-      case "explain":
-        setTextResult(explainNote(content, note.title));
-        break;
-      case "extract": {
-        const found = extractTasksFromNote(content);
-        setTaskCandidates(found.map((title) => ({ title, selected: true })));
-        break;
-      }
+
+    if (key === "extract") {
+      const found = extractTasksFromNote(content);
+      setTaskCandidates(found.map((title) => ({ title, selected: true })));
+      return;
     }
+
+    if (!isRealProviderEnabled()) {
+      setTextResult(runMockAction(key, content, note.title));
+      return;
+    }
+
+    setTextResult("");
+    const controller = new AbortController();
+    abortRef.current = controller;
+    streamRealResponse(content, noteActionSystemPrompt(key, note.title), setTextResult, controller.signal).catch(
+      (error) => {
+        if (controller.signal.aborted) return;
+        console.error("Real AI provider failed, falling back to mock:", error);
+        setTextResult(runMockAction(key, content, note.title));
+      }
+    );
   }
 
   function dismiss() {
+    abortRef.current?.abort();
     setActive(null);
     setTextResult("");
     setTaskCandidates([]);
