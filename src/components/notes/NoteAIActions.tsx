@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/Dropdown";
 import { Button } from "@/components/ui/Button";
 import { useTasksStore } from "@/lib/store/useTasksStore";
+import { toast } from "@/lib/store/useToastStore";
 import {
   explainNote,
   extractTasksFromNote,
@@ -88,6 +89,7 @@ export function NoteAIActions({ note, content, onReplaceContent, onAppendContent
     for (const candidate of selected) {
       addTask({ title: candidate.title, projectId: note.projectId });
     }
+    toast.success(`Created ${selected.length} task${selected.length === 1 ? "" : "s"}`);
     dismiss();
   }
 

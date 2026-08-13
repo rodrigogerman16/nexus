@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { useTasksStore } from "@/lib/store/useTasksStore";
+import { toast } from "@/lib/store/useToastStore";
 import type { Task, TaskPriority, TaskStatus } from "@/lib/store/types";
 import {
   durationSelectOptions,
@@ -96,8 +97,10 @@ function TaskDialogForm({ task, defaultProjectId, draft, onOpenChange }: TaskDia
     };
     if (task) {
       updateTask(task.id, payload);
+      toast.success("Task updated");
     } else {
       addTask(payload);
+      toast.success("Task created");
     }
     onOpenChange(false);
   }

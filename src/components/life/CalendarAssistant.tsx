@@ -5,6 +5,7 @@ import { Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useLifeStore } from "@/lib/store/useLifeStore";
+import { toast } from "@/lib/store/useToastStore";
 import { planSchedule, type PlannedBlock } from "@/lib/ai/planSchedule";
 
 interface CalendarAssistantProps {
@@ -31,6 +32,7 @@ export function CalendarAssistant({ referenceDate }: CalendarAssistantProps) {
         color: block.title === "Break" || block.title === "Review" ? "#6c6472" : "#22d3ee",
       });
     }
+    toast.success(`Added ${plan.length} event${plan.length === 1 ? "" : "s"} to your calendar`);
     setPlan(null);
     setInput("");
   }

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/Select";
 import { useLifeStore } from "@/lib/store/useLifeStore";
 import { useTasksStore } from "@/lib/store/useTasksStore";
+import { toast } from "@/lib/store/useToastStore";
 import { toDateKey } from "@/lib/utils";
 import type { CalendarEvent } from "@/lib/store/types";
 
@@ -78,8 +79,10 @@ function EventDialogForm({ defaultDate, event, onOpenChange }: EventDialogFormPr
     };
     if (event) {
       updateEvent(event.id, payload);
+      toast.success("Event updated");
     } else {
       addEvent(payload);
+      toast.success("Event added");
     }
     onOpenChange(false);
   }
@@ -150,6 +153,7 @@ function EventDialogForm({ defaultDate, event, onOpenChange }: EventDialogFormPr
           <button
             onClick={() => {
               deleteEvent(event.id);
+              toast.success("Event deleted");
               onOpenChange(false);
             }}
             className="focus-ring flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-danger hover:bg-danger/10"

@@ -9,6 +9,7 @@ import type { Note } from "@/lib/store/types";
 import { useNotesStore } from "@/lib/store/useNotesStore";
 import { useTasksStore } from "@/lib/store/useTasksStore";
 import { useAIContextStore } from "@/lib/ai/context";
+import { toast } from "@/lib/store/useToastStore";
 import { Button } from "@/components/ui/Button";
 import { TagInput } from "@/components/ui/TagInput";
 import { NoteAIActions } from "@/components/notes/NoteAIActions";
@@ -93,6 +94,7 @@ export function NoteEditor({ note, onDeleted, onBack }: NoteEditorProps) {
           <button
             onClick={() => {
               deleteNote(note.id);
+              toast.success("Note deleted");
               onDeleted();
             }}
             className="focus-ring rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"

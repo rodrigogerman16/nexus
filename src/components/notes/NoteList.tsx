@@ -120,10 +120,20 @@ export function NoteList({
         {rest.map((note) => (
           <NoteRow key={note.id} note={note} active={note.id === selectedId} onSelect={onSelect} />
         ))}
-        {notes.length === 0 && (
+        {notes.length === 0 && search.trim() && (
           <p className="px-2 py-8 text-center text-sm text-muted-foreground">
-            No notes match your search.
+            No notes match &ldquo;{search.trim()}&rdquo;.
           </p>
+        )}
+        {notes.length === 0 && !search.trim() && (
+          <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
+            <p className="text-sm text-muted-foreground">
+              No notes yet. Start writing and NEXUS will help you organize it.
+            </p>
+            <Button size="sm" variant="secondary" onClick={onCreate} className="gap-1.5">
+              <Plus className="h-3.5 w-3.5" /> Create note
+            </Button>
+          </div>
         )}
       </div>
     </div>

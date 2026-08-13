@@ -8,6 +8,7 @@ import { CommandPalette } from "@/components/layout/CommandPalette";
 import { ShortcutsModal } from "@/components/layout/ShortcutsModal";
 import { AppReady } from "@/components/layout/AppReady";
 import { TooltipProvider } from "@/components/ui/Tooltip";
+import { Toaster } from "@/components/ui/Toaster";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -28,6 +29,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <MobileNav />
         <CommandPalette />
         <ShortcutsModal />
+        <Toaster />
       </TooltipProvider>
     </AppReady>
   );

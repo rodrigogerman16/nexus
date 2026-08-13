@@ -5,6 +5,7 @@ import { Check, Clock, ListChecks, MoreHorizontal, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/store/types";
 import { useTasksStore } from "@/lib/store/useTasksStore";
+import { toast } from "@/lib/store/useToastStore";
 import { Badge } from "@/components/ui/Badge";
 import { priorityConfig, formatDuration } from "@/components/tasks/taskMeta";
 import {
@@ -134,7 +135,10 @@ export function TaskCard({ task, onEdit, className }: TaskCardProps) {
         <DropdownContent align="end">
           <DropdownItem onSelect={() => onEdit(task)}>Edit</DropdownItem>
           <DropdownItem
-            onSelect={() => deleteTask(task.id)}
+            onSelect={() => {
+              deleteTask(task.id);
+              toast.success("Task deleted");
+            }}
             className="text-danger data-[highlighted]:bg-danger/10"
           >
             <Trash2 className="h-3.5 w-3.5" /> Delete

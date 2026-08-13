@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { useTasksStore } from "@/lib/store/useTasksStore";
+import { toast } from "@/lib/store/useToastStore";
 import type { Project, ProjectStatus } from "@/lib/store/types";
 import { statusConfig } from "@/components/projects/projectMeta";
 import { useRouter } from "next/navigation";
@@ -71,8 +72,10 @@ function ProjectDialogForm({
     };
     if (project) {
       updateProject(project.id, payload);
+      toast.success("Project updated");
     } else {
       const created = addProject({ ...payload, icon: "Folder" });
+      toast.success("Project created");
       onOpenChange(false);
       router.push(`/projects/${created.id}`);
       return;
