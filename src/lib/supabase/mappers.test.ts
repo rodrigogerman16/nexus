@@ -1,13 +1,23 @@
 import { describe, expect, it } from "vitest";
 import {
+  activityToDbRow,
+  dbActivityToActivity,
   dbEventToEvent,
+  dbGoalToGoal,
+  dbHabitToHabit,
   dbNoteToNote,
+  dbNotificationToNotification,
   dbProjectToProject,
   dbTaskToTask,
   eventPatchToDbUpdate,
   eventToDbRow,
+  goalPatchToDbUpdate,
+  goalToDbRow,
+  habitPatchToDbUpdate,
+  habitToDbRow,
   notePatchToDbUpdate,
   noteToDbRow,
+  notificationToDbRow,
   projectPatchToDbUpdate,
   projectToDbRow,
   taskPatchToDbUpdate,
@@ -19,6 +29,10 @@ type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 type NoteRow = Database["public"]["Tables"]["notes"]["Row"];
 type EventRow = Database["public"]["Tables"]["calendar_events"]["Row"];
+type HabitRow = Database["public"]["Tables"]["habits"]["Row"];
+type GoalRow = Database["public"]["Tables"]["goals"]["Row"];
+type NotificationRow = Database["public"]["Tables"]["notifications"]["Row"];
+type ActivityRow = Database["public"]["Tables"]["activities"]["Row"];
 
 function makeTaskRow(overrides: Partial<TaskRow> = {}): TaskRow {
   return {
@@ -87,6 +101,63 @@ function makeEventRow(overrides: Partial<EventRow> = {}): EventRow {
     color: null,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function makeHabitRow(overrides: Partial<HabitRow> = {}): HabitRow {
+  return {
+    id: "h1",
+    owner_id: "u1",
+    name: "Habit",
+    color: null,
+    frequency: "daily",
+    target_per_week: 5,
+    completions: {},
+    created_at: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function makeGoalRow(overrides: Partial<GoalRow> = {}): GoalRow {
+  return {
+    id: "g1",
+    owner_id: "u1",
+    title: "Goal",
+    description: null,
+    progress: 0,
+    target_date: null,
+    linked_habit_ids: [],
+    created_at: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function makeNotificationRow(overrides: Partial<NotificationRow> = {}): NotificationRow {
+  return {
+    id: "notif1",
+    owner_id: "u1",
+    type: "task_due",
+    title: "Notification",
+    body: null,
+    is_read: false,
+    related_entity_type: null,
+    related_entity_id: null,
+    created_at: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function makeActivityRow(overrides: Partial<ActivityRow> = {}): ActivityRow {
+  return {
+    id: "a1",
+    owner_id: "u1",
+    project_id: null,
+    type: "task_created",
+    description: "Created a task",
+    related_entity_type: null,
+    related_entity_id: null,
+    created_at: "2026-01-01T00:00:00.000Z",
     ...overrides,
   };
 }
@@ -310,5 +381,149 @@ describe("eventPatchToDbUpdate", () => {
       start_time: "2026-02-01T00:00:00.000Z",
       end_time: "2026-02-01T01:00:00.000Z",
     });
+  });
+});
+
+describe("dbHabitToHabit", () => {
+  it("falls back to a default color and empty completions", () => {
+    const habit = dbHabitToHabit(makeHabitRow());
+    expect(habit.color).toBe("#ff6b3d");
+    expect(habit.completions).toEqual({});
+  });
+
+  it("carries through completions and targetPerWeek", () => {
+    const habit = dbHabitToHabit(
+      makeHabitRow({ completions: { "2026-01-05": true }, target_per_week: 3 })
+    );
+    expect(habit.completions).toEqual({ "2026-01-05": true });
+    expect(habit.targetPerWeek).toBe(3);
+  });
+});
+
+describe("habitToDbRow / habitPatchToDbUpdate", () => {
+  it("maps app fields to snake_case", () => {
+    const row = habitToDbRow(
+      {
+        id: "h1",
+        name: "Read",
+        color: "#22c55e",
+        frequency: "weekly",
+        targetPerWeek: 3,
+        completions: {},
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+      "u1"
+    );
+    expect(row).toMatchObject({ owner_id: "u1", target_per_week: 3, frequency: "weekly" });
+  });
+
+  it("only includes patched keys", () => {
+    expect(habitPatchToDbUpdate({ completions: { "2026-01-05": true } })).toEqual({
+      completions: { "2026-01-05": true },
+    });
+  });
+});
+
+describe("dbGoalToGoal", () => {
+  it("maps target_date/linked_habit_ids and nulls to undefined/empty", () => {
+    const goal = dbGoalToGoal(makeGoalRow());
+    expect(goal.targetDate).toBeUndefined();
+    expect(goal.linkedHabitIds).toEqual([]);
+  });
+
+  it("carries through a populated target_date and linked habits", () => {
+    const goal = dbGoalToGoal(
+      makeGoalRow({ target_date: "2026-06-01T00:00:00.000Z", linked_habit_ids: ["h1", "h2"] })
+    );
+    expect(goal.targetDate).toBe("2026-06-01T00:00:00.000Z");
+    expect(goal.linkedHabitIds).toEqual(["h1", "h2"]);
+  });
+});
+
+describe("goalToDbRow / goalPatchToDbUpdate", () => {
+  it("maps app fields to snake_case", () => {
+    const row = goalToDbRow(
+      { id: "g1", title: "Ship v2", progress: 10, linkedHabitIds: [] },
+      "u1"
+    );
+    expect(row).toMatchObject({ owner_id: "u1", title: "Ship v2", target_date: null });
+  });
+
+  it("only includes patched keys", () => {
+    expect(goalPatchToDbUpdate({ progress: 75 })).toEqual({ progress: 75 });
+  });
+});
+
+describe("dbNotificationToNotification", () => {
+  it("maps is_read to isRead and a null body to undefined", () => {
+    const notification = dbNotificationToNotification(makeNotificationRow({ is_read: true }));
+    expect(notification.isRead).toBe(true);
+    expect(notification.body).toBeUndefined();
+  });
+});
+
+describe("notificationToDbRow", () => {
+  it("maps isRead back to is_read", () => {
+    const row = notificationToDbRow(
+      {
+        id: "notif1",
+        type: "task_due",
+        title: "Due soon",
+        isRead: false,
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+      "u1"
+    );
+    expect(row).toMatchObject({ owner_id: "u1", is_read: false, body: null });
+  });
+});
+
+describe("dbActivityToActivity", () => {
+  it("maps related_entity_id to taskId only when related_entity_type is 'task'", () => {
+    const activity = dbActivityToActivity(
+      makeActivityRow({ related_entity_type: "task", related_entity_id: "t1" })
+    );
+    expect(activity.taskId).toBe("t1");
+  });
+
+  it("leaves taskId undefined for a non-task related entity", () => {
+    const activity = dbActivityToActivity(
+      makeActivityRow({ related_entity_type: "project", related_entity_id: "p1" })
+    );
+    expect(activity.taskId).toBeUndefined();
+  });
+
+  it("carries through project_id", () => {
+    const activity = dbActivityToActivity(makeActivityRow({ project_id: "p1" }));
+    expect(activity.projectId).toBe("p1");
+  });
+});
+
+describe("activityToDbRow", () => {
+  it("sets related_entity_type to 'task' only when taskId is present", () => {
+    const row = activityToDbRow(
+      {
+        id: "a1",
+        type: "task_completed",
+        description: "Completed a task",
+        taskId: "t1",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+      "u1"
+    );
+    expect(row).toMatchObject({ related_entity_type: "task", related_entity_id: "t1" });
+  });
+
+  it("leaves related_entity fields null without a taskId", () => {
+    const row = activityToDbRow(
+      {
+        id: "a1",
+        type: "project_created",
+        description: "Created a project",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+      "u1"
+    );
+    expect(row).toMatchObject({ related_entity_type: null, related_entity_id: null });
   });
 });

@@ -1,4 +1,13 @@
-import type { CalendarEvent, Note, Project, Task } from "@/lib/store/types";
+import type {
+  ActivityItem,
+  AppNotification,
+  CalendarEvent,
+  Goal,
+  Habit,
+  Note,
+  Project,
+  Task,
+} from "@/lib/store/types";
 import type { Database } from "@/lib/supabase/types";
 
 type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
@@ -13,6 +22,16 @@ type NoteUpdate = Database["public"]["Tables"]["notes"]["Update"];
 type EventRow = Database["public"]["Tables"]["calendar_events"]["Row"];
 type EventInsert = Database["public"]["Tables"]["calendar_events"]["Insert"];
 type EventUpdate = Database["public"]["Tables"]["calendar_events"]["Update"];
+type HabitRow = Database["public"]["Tables"]["habits"]["Row"];
+type HabitInsert = Database["public"]["Tables"]["habits"]["Insert"];
+type HabitUpdate = Database["public"]["Tables"]["habits"]["Update"];
+type GoalRow = Database["public"]["Tables"]["goals"]["Row"];
+type GoalInsert = Database["public"]["Tables"]["goals"]["Insert"];
+type GoalUpdate = Database["public"]["Tables"]["goals"]["Update"];
+type NotificationRow = Database["public"]["Tables"]["notifications"]["Row"];
+type NotificationInsert = Database["public"]["Tables"]["notifications"]["Insert"];
+type ActivityRow = Database["public"]["Tables"]["activities"]["Row"];
+type ActivityInsert = Database["public"]["Tables"]["activities"]["Insert"];
 
 export function dbTaskToTask(row: TaskRow): Task {
   return {
@@ -183,4 +202,122 @@ export function eventPatchToDbUpdate(patch: Partial<CalendarEvent>): EventUpdate
   if ("color" in patch) update.color = patch.color ?? null;
   if ("projectId" in patch) update.project_id = patch.projectId ?? null;
   return update;
+}
+
+export function dbHabitToHabit(row: HabitRow): Habit {
+  return {
+    id: row.id,
+    name: row.name,
+    color: row.color ?? "#ff6b3d",
+    frequency: row.frequency,
+    targetPerWeek: row.target_per_week,
+    completions: row.completions ?? {},
+    createdAt: row.created_at,
+  };
+}
+
+export function habitToDbRow(habit: Habit, ownerId: string): HabitInsert {
+  return {
+    id: habit.id,
+    owner_id: ownerId,
+    name: habit.name,
+    color: habit.color,
+    frequency: habit.frequency,
+    target_per_week: habit.targetPerWeek,
+    completions: habit.completions,
+    created_at: habit.createdAt,
+  };
+}
+
+export function habitPatchToDbUpdate(patch: Partial<Habit>): HabitUpdate {
+  const update: HabitUpdate = {};
+  if ("name" in patch) update.name = patch.name;
+  if ("color" in patch) update.color = patch.color;
+  if ("frequency" in patch) update.frequency = patch.frequency;
+  if ("targetPerWeek" in patch) update.target_per_week = patch.targetPerWeek;
+  if ("completions" in patch) update.completions = patch.completions;
+  return update;
+}
+
+export function dbGoalToGoal(row: GoalRow): Goal {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description ?? undefined,
+    progress: row.progress,
+    targetDate: row.target_date ?? undefined,
+    linkedHabitIds: row.linked_habit_ids ?? [],
+  };
+}
+
+export function goalToDbRow(goal: Goal, ownerId: string): GoalInsert {
+  return {
+    id: goal.id,
+    owner_id: ownerId,
+    title: goal.title,
+    description: goal.description ?? null,
+    progress: goal.progress,
+    target_date: goal.targetDate ?? null,
+    linked_habit_ids: goal.linkedHabitIds,
+  };
+}
+
+export function goalPatchToDbUpdate(patch: Partial<Goal>): GoalUpdate {
+  const update: GoalUpdate = {};
+  if ("title" in patch) update.title = patch.title;
+  if ("description" in patch) update.description = patch.description ?? null;
+  if ("progress" in patch) update.progress = patch.progress;
+  if ("targetDate" in patch) update.target_date = patch.targetDate ?? null;
+  if ("linkedHabitIds" in patch) update.linked_habit_ids = patch.linkedHabitIds;
+  return update;
+}
+
+export function dbNotificationToNotification(row: NotificationRow): AppNotification {
+  return {
+    id: row.id,
+    type: row.type,
+    title: row.title,
+    body: row.body ?? undefined,
+    isRead: row.is_read,
+    createdAt: row.created_at,
+  };
+}
+
+export function notificationToDbRow(
+  notification: AppNotification,
+  ownerId: string
+): NotificationInsert {
+  return {
+    id: notification.id,
+    owner_id: ownerId,
+    type: notification.type,
+    title: notification.title,
+    body: notification.body ?? null,
+    is_read: notification.isRead,
+    created_at: notification.createdAt,
+  };
+}
+
+export function dbActivityToActivity(row: ActivityRow): ActivityItem {
+  return {
+    id: row.id,
+    type: row.type as ActivityItem["type"],
+    description: row.description,
+    projectId: row.project_id ?? undefined,
+    taskId: row.related_entity_type === "task" ? (row.related_entity_id ?? undefined) : undefined,
+    createdAt: row.created_at,
+  };
+}
+
+export function activityToDbRow(activity: ActivityItem, ownerId: string): ActivityInsert {
+  return {
+    id: activity.id,
+    owner_id: ownerId,
+    project_id: activity.projectId ?? null,
+    type: activity.type,
+    description: activity.description,
+    related_entity_type: activity.taskId ? "task" : null,
+    related_entity_id: activity.taskId ?? null,
+    created_at: activity.createdAt,
+  };
 }

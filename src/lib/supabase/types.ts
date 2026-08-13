@@ -1,7 +1,7 @@
 /**
  * Hand-authored to mirror supabase/migrations/0001_init.sql,
- * 0002_phase12_tasks_projects.sql, and 0003_phase13_notes_tags.sql, in the
- * same shape
+ * 0002_phase12_tasks_projects.sql, 0003_phase13_notes_tags.sql, and
+ * 0004_phase14_habits_goals.sql, in the same shape
  * `supabase gen types typescript` produces. Once a real project exists,
  * regenerate this file from the live schema with:
  *
@@ -26,6 +26,7 @@ export type NotificationType =
 export type RelatedEntityType = "task" | "project" | "note" | "calendar_event";
 export type AiContextType = "global" | "project" | "note" | "task" | "calendar";
 export type AiMessageRole = "user" | "assistant" | "system";
+export type HabitFrequency = "daily" | "weekly";
 
 export interface Database {
   public: {
@@ -239,6 +240,42 @@ export interface Database {
           content: string;
         };
         Update: Partial<Database["public"]["Tables"]["ai_messages"]["Row"]>;
+        Relationships: [];
+      };
+      habits: {
+        Row: {
+          id: string;
+          owner_id: string;
+          name: string;
+          color: string | null;
+          frequency: HabitFrequency;
+          target_per_week: number;
+          completions: Record<string, boolean>;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["habits"]["Row"]> & {
+          owner_id: string;
+          name: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["habits"]["Row"]>;
+        Relationships: [];
+      };
+      goals: {
+        Row: {
+          id: string;
+          owner_id: string;
+          title: string;
+          description: string | null;
+          progress: number;
+          target_date: string | null;
+          linked_habit_ids: string[];
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["goals"]["Row"]> & {
+          owner_id: string;
+          title: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["goals"]["Row"]>;
         Relationships: [];
       };
     };

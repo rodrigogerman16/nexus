@@ -22,13 +22,13 @@ function fakeSupabase(errors: { insert?: object; update?: object; delete?: objec
 }
 
 beforeEach(() => {
-  useLifeStore.setState({ events: [], eventsUserId: null, eventsStatus: "idle" });
+  useLifeStore.setState({ events: [], habits: [], goals: [], userId: null, status: "idle" });
   useToastStore.setState({ toasts: [] });
   vi.mocked(createClient).mockReset();
 });
 
-describe("useLifeStore — events (Supabase-backed)", () => {
-  it("addEvent assigns a real UUID and inserts optimistically without a signed-in user", () => {
+describe("useLifeStore — events, signed-out (no network writes)", () => {
+  it("addEvent assigns a real UUID and inserts optimistically", () => {
     const created = useLifeStore.getState().addEvent({ title: "Standup" });
     expect(created.id).toMatch(/^[0-9a-f-]{36}$/i);
     expect(useLifeStore.getState().events[0].title).toBe("Standup");
@@ -46,35 +46,35 @@ describe("useLifeStore — events (Supabase-backed)", () => {
     useLifeStore.getState().deleteEvent(created.id);
     expect(useLifeStore.getState().events).toHaveLength(0);
   });
-
-  it("rolls back the optimistic event and toasts on insert failure", async () => {
-    vi.mocked(createClient).mockReturnValue(
-      fakeSupabase({ insert: { message: "boom" } }) as unknown as ReturnType<typeof createClient>
-    );
-    useLifeStore.setState({ eventsUserId: "user-1" });
-    useLifeStore.getState().addEvent({ title: "Will fail" });
-    await flush();
-    expect(useLifeStore.getState().events).toHaveLength(0);
-    expect(useToastStore.getState().toasts[0]).toMatchObject({ variant: "error" });
-  });
-
-  it("hydrateEvents(null) clears local events (e.g. on sign-out)", async () => {
-    useLifeStore.getState().addEvent({ title: "Leftover" });
-    await useLifeStore.getState().hydrateEvents(null);
-    expect(useLifeStore.getState().events).toEqual([]);
-    expect(useLifeStore.getState().eventsStatus).toBe("idle");
-  });
 });
 
-describe("useLifeStore — habits/goals stay local-only", () => {
-  it("addHabit and toggleHabitCompletion work without touching Supabase", () => {
+describe("useLifeStore — habits, signed-out (no network writes)", () => {
+  it("addHabit assigns a real UUID and defaults", () => {
+    const created = useLifeStore.getState().addHabit({ name: "Read" });
+    expect(created.id).toMatch(/^[0-9a-f-]{36}$/i);
+    expect(created.frequency).toBe("daily");
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it("toggleHabitCompletion flips the day's entry", () => {
     const habit = useLifeStore.getState().addHabit({ name: "Read" });
     useLifeStore.getState().toggleHabitCompletion(habit.id, new Date(2026, 0, 5));
     const updated = useLifeStore.getState().habits.find((h) => h.id === habit.id)!;
     expect(updated.completions["2026-01-05"]).toBe(true);
-    expect(createClient).not.toHaveBeenCalled();
+    useLifeStore.getState().toggleHabitCompletion(habit.id, new Date(2026, 0, 5));
+    expect(
+      useLifeStore.getState().habits.find((h) => h.id === habit.id)!.completions["2026-01-05"]
+    ).toBe(false);
   });
 
+  it("deleteHabit removes it from the list", () => {
+    const habit = useLifeStore.getState().addHabit({ name: "Temp" });
+    useLifeStore.getState().deleteHabit(habit.id);
+    expect(useLifeStore.getState().habits).toHaveLength(0);
+  });
+});
+
+describe("useLifeStore — goals, signed-out (no network writes)", () => {
   it("addGoal, updateGoal, and deleteGoal work locally", () => {
     const goal = useLifeStore.getState().addGoal({ title: "Ship v2" });
     useLifeStore.getState().updateGoal(goal.id, { progress: 50 });
@@ -82,14 +82,39 @@ describe("useLifeStore — habits/goals stay local-only", () => {
     useLifeStore.getState().deleteGoal(goal.id);
     expect(useLifeStore.getState().goals.find((g) => g.id === goal.id)).toBeUndefined();
   });
+});
 
-  it("persist only writes habits/goals to storage, not events", () => {
-    const options = useLifeStore.persist.getOptions();
-    const partialize = options.partialize as (state: ReturnType<typeof useLifeStore.getState>) => unknown;
-    useLifeStore.getState().addEvent({ title: "Should not persist" });
-    const persisted = partialize(useLifeStore.getState()) as Record<string, unknown>;
-    expect(persisted).not.toHaveProperty("events");
-    expect(persisted).toHaveProperty("habits");
-    expect(persisted).toHaveProperty("goals");
+describe("useLifeStore — signed-in (persists to Supabase)", () => {
+  it("rolls back the optimistic event and toasts on insert failure", async () => {
+    vi.mocked(createClient).mockReturnValue(
+      fakeSupabase({ insert: { message: "boom" } }) as unknown as ReturnType<typeof createClient>
+    );
+    useLifeStore.setState({ userId: "user-1" });
+    useLifeStore.getState().addEvent({ title: "Will fail" });
+    await flush();
+    expect(useLifeStore.getState().events).toHaveLength(0);
+    expect(useToastStore.getState().toasts[0]).toMatchObject({ variant: "error" });
+  });
+
+  it("rolls back the optimistic habit on insert failure", async () => {
+    vi.mocked(createClient).mockReturnValue(
+      fakeSupabase({ insert: { message: "boom" } }) as unknown as ReturnType<typeof createClient>
+    );
+    useLifeStore.setState({ userId: "user-1" });
+    useLifeStore.getState().addHabit({ name: "Will fail" });
+    await flush();
+    expect(useLifeStore.getState().habits).toHaveLength(0);
+  });
+
+  it("hydrate(null) clears events, habits, and goals (e.g. on sign-out)", async () => {
+    useLifeStore.getState().addEvent({ title: "Leftover event" });
+    useLifeStore.getState().addHabit({ name: "Leftover habit" });
+    useLifeStore.getState().addGoal({ title: "Leftover goal" });
+    await useLifeStore.getState().hydrate(null);
+    const { events, habits, goals, status } = useLifeStore.getState();
+    expect(events).toEqual([]);
+    expect(habits).toEqual([]);
+    expect(goals).toEqual([]);
+    expect(status).toBe("idle");
   });
 });
