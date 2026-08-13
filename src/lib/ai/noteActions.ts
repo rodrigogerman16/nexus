@@ -22,14 +22,25 @@ function sentences(text: string): string[] {
     .filter(Boolean);
 }
 
+/** Joins summary fragments with a period, but skips the extra one when a
+ * fragment already ends in terminal punctuation (avoids "here.. Next"). */
+function joinWithPeriod(parts: string[]): string {
+  return parts.reduce((acc, part, i) => {
+    if (i === 0) return part;
+    return /[.!?]$/.test(acc) ? `${acc} ${part}` : `${acc}. ${part}`;
+  }, "");
+}
+
 /** Plain-text summary — the first couple of lines/sentences, plus a note
  * about length if there's clearly more the summary is leaving out. */
 export function summarizeNote(content: string): string {
   const plain = stripMarkdown(content);
   if (!plain) return "This note is empty — there's nothing to summarize yet.";
   const parts = sentences(plain);
-  const lead = parts.slice(0, 2).join(". ");
-  return parts.length > 2 ? `${lead}. (${parts.length - 2} more line${parts.length - 2 === 1 ? "" : "s"} follow.)` : lead;
+  const lead = joinWithPeriod(parts.slice(0, 2));
+  if (parts.length <= 2) return lead;
+  const suffix = `(${parts.length - 2} more line${parts.length - 2 === 1 ? "" : "s"} follow.)`;
+  return /[.!?]$/.test(lead) ? `${lead} ${suffix}` : `${lead}. ${suffix}`;
 }
 
 /** Lightweight mechanical cleanup — collapses stray whitespace, straightens
