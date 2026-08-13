@@ -1,11 +1,15 @@
 /**
- * Hand-authored to mirror supabase/migrations/0001_init.sql, in the same
- * shape `supabase gen types typescript` produces. Once a real project
- * exists, regenerate this file from the live schema with:
+ * Hand-authored to mirror supabase/migrations/0001_init.sql and
+ * 0002_phase12_tasks_projects.sql, in the same shape
+ * `supabase gen types typescript` produces. Once a real project exists,
+ * regenerate this file from the live schema with:
  *
  *   npx supabase gen types typescript --project-id <id> > src/lib/supabase/types.ts
  *
- * to guarantee it never drifts from the database.
+ * to guarantee it never drifts from the database. Every table carries an
+ * empty `Relationships: []` and the schema an empty `Views`/`Functions` —
+ * supabase-js's generic constraints (`GenericTable`/`GenericSchema`) require
+ * those keys to be present for query builder types to resolve correctly.
  */
 
 export type ProjectStatus = "planning" | "active" | "paused" | "completed";
@@ -39,6 +43,7 @@ export interface Database {
           id: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Row"]>;
+        Relationships: [];
       };
       projects: {
         Row: {
@@ -48,6 +53,7 @@ export interface Database {
           description: string | null;
           status: ProjectStatus;
           color: string | null;
+          icon: string;
           progress: number;
           deadline: string | null;
           is_favorite: boolean;
@@ -59,6 +65,7 @@ export interface Database {
           name: string;
         };
         Update: Partial<Database["public"]["Tables"]["projects"]["Row"]>;
+        Relationships: [];
       };
       project_members: {
         Row: {
@@ -73,6 +80,7 @@ export interface Database {
           user_id: string;
         };
         Update: Partial<Database["public"]["Tables"]["project_members"]["Row"]>;
+        Relationships: [];
       };
       tags: {
         Row: {
@@ -87,11 +95,13 @@ export interface Database {
           name: string;
         };
         Update: Partial<Database["public"]["Tables"]["tags"]["Row"]>;
+        Relationships: [];
       };
       task_tags: {
         Row: { task_id: string; tag_id: string };
         Insert: { task_id: string; tag_id: string };
         Update: Partial<{ task_id: string; tag_id: string }>;
+        Relationships: [];
       };
       tasks: {
         Row: {
@@ -105,6 +115,7 @@ export interface Database {
           priority: TaskPriority;
           due_date: string | null;
           estimated_duration_minutes: number | null;
+          tags: string[];
           position: number;
           completed_at: string | null;
           created_at: string;
@@ -115,6 +126,7 @@ export interface Database {
           title: string;
         };
         Update: Partial<Database["public"]["Tables"]["tasks"]["Row"]>;
+        Relationships: [];
       };
       notes: {
         Row: {
@@ -131,6 +143,7 @@ export interface Database {
           owner_id: string;
         };
         Update: Partial<Database["public"]["Tables"]["notes"]["Row"]>;
+        Relationships: [];
       };
       calendar_events: {
         Row: {
@@ -153,6 +166,7 @@ export interface Database {
           end_time: string;
         };
         Update: Partial<Database["public"]["Tables"]["calendar_events"]["Row"]>;
+        Relationships: [];
       };
       notifications: {
         Row: {
@@ -172,6 +186,7 @@ export interface Database {
           title: string;
         };
         Update: Partial<Database["public"]["Tables"]["notifications"]["Row"]>;
+        Relationships: [];
       };
       activities: {
         Row: {
@@ -190,6 +205,7 @@ export interface Database {
           description: string;
         };
         Update: Partial<Database["public"]["Tables"]["activities"]["Row"]>;
+        Relationships: [];
       };
       ai_conversations: {
         Row: {
@@ -205,6 +221,7 @@ export interface Database {
           owner_id: string;
         };
         Update: Partial<Database["public"]["Tables"]["ai_conversations"]["Row"]>;
+        Relationships: [];
       };
       ai_messages: {
         Row: {
@@ -220,7 +237,10 @@ export interface Database {
           content: string;
         };
         Update: Partial<Database["public"]["Tables"]["ai_messages"]["Row"]>;
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
   };
 }

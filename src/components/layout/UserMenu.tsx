@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { HelpCircle, Moon, Settings, Sun } from "lucide-react";
+import { HelpCircle, LogOut, Moon, Settings, Sun } from "lucide-react";
 import { Avatar, AvatarFallback, initialsFor } from "@/components/ui/Avatar";
 import {
   Dropdown,
@@ -13,6 +13,7 @@ import {
 import { useSettingsStore } from "@/lib/store/useSettingsStore";
 import { useUIStore } from "@/lib/store/useUIStore";
 import { cn } from "@/lib/utils";
+import { signOut } from "@/lib/auth/actions";
 
 export function UserMenu({
   className,
@@ -61,6 +62,9 @@ export function UserMenu({
         <DropdownItem onSelect={() => setTheme(theme === "dark" ? "light" : "dark")}>
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           {theme === "dark" ? "Light mode" : "Dark mode"}
+        </DropdownItem>
+        <DropdownItem onSelect={() => void signOut()} className="text-danger">
+          <LogOut className="h-4 w-4" /> Sign out
         </DropdownItem>
       </DropdownContent>
     </Dropdown>

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -10,9 +11,23 @@ import { AppReady } from "@/components/layout/AppReady";
 import { TooltipProvider } from "@/components/ui/Tooltip";
 import { Toaster } from "@/components/ui/Toaster";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useHydrateTasksStore } from "@/hooks/useHydrateTasksStore";
+
+const AUTH_ROUTES = ["/login", "/signup"];
 
 export function Shell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   useKeyboardShortcuts();
+  useHydrateTasksStore();
+
+  if (AUTH_ROUTES.includes(pathname)) {
+    return (
+      <TooltipProvider delayDuration={200}>
+        {children}
+        <Toaster />
+      </TooltipProvider>
+    );
+  }
 
   return (
     <AppReady>
