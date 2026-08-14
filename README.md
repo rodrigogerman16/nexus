@@ -31,8 +31,23 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deploying NEXUS to Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Import the repo.** At [vercel.com/new](https://vercel.com/new), import `rodrigogerman16/nexus` from GitHub. Vercel auto-detects Next.js — no build config needed.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. **Set environment variables.** In the project's Settings → Environment Variables, add the same variables from `.env.local.example`:
+
+   | Variable | Required | Notes |
+   | --- | --- | --- |
+   | `NEXT_PUBLIC_SUPABASE_URL` | Yes | From your Supabase project's API settings |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Same place |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Same place — keep this one server-only, never `NEXT_PUBLIC_` |
+   | `NEXT_PUBLIC_AI_PROVIDER` | Yes | `mock` (free, default) or `anthropic` (real Claude responses) |
+   | `ANTHROPIC_API_KEY` | Only if `AI_PROVIDER=anthropic` | From [platform.claude.com](https://platform.claude.com) → Settings → API Keys |
+   | `ANTHROPIC_MODEL` | No | Defaults to `claude-haiku-4-5` if unset |
+
+3. **Deploy.** Vercel builds and deploys automatically; every push to `main` redeploys.
+
+4. **Update Supabase's Auth URL settings.** In your Supabase project → Authentication → URL Configuration, set **Site URL** to your production Vercel URL (e.g. `https://nexus-yourname.vercel.app`), and add it to **Redirect URLs**. Without this, the confirmation-email link sent on signup will point at `localhost` instead of your live site.
+
+CI (`.github/workflows/ci.yml`) needs no secrets and doesn't touch deployment — it only verifies lint/typecheck/tests/build stay green on every push.
