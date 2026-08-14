@@ -21,12 +21,22 @@ jobs:
 
       - run: npm run lint
 
-      - run: npm run typecheck
-
       - run: npm run test:run
 
+      # Build before the standalone typecheck: Next.js's typed-routes
+      # feature (e.g. `LayoutProps<"/">` in src/app/layout.tsx) generates
+      # ambient types under .next/types that only exist once `next build`
+      # (or `next dev`) has run at least once. A fresh checkout has no
+      # .next dir, so `tsc --noEmit` on its own fails here even though the
+      # code is correct — reproduced by cloning fresh and confirmed this
+      # ordering fixes it. `next build` also runs its own full TS check,
+      # so this step is the real gate; typecheck below is now a fast,
+      # redundant confirmation.
+      #
       # No Supabase/Anthropic env vars are needed here — nothing touches
       # them during static generation, only inside Route Handlers/Server
       # Actions, which run at request time, not build time. Verified by
       # running `next build` locally with .env.local removed entirely.
       - run: npm run build
+
+      - run: npm run typecheck
