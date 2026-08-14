@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      - run: npm run test:run
+
+      # No Supabase/Anthropic env vars are needed here — nothing touches
+      # them during static generation, only inside Route Handlers/Server
+      # Actions, which run at request time, not build time. Verified by
+      # running `next build` locally with .env.local removed entirely.
+      - run: npm run build

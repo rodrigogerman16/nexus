@@ -44,5 +44,5 @@ next-env.d.ts
 # local dev artifacts
 dev.log
 
-# claude code local settings
-.claude/settings.local.json
+# claude code local settings/state
+.claude/
