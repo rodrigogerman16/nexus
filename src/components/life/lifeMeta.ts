@@ -1,5 +1,41 @@
 import { toDateKey } from "@/lib/utils";
-import type { Habit } from "@/lib/store/types";
+import type { CalendarEvent, Habit } from "@/lib/store/types";
+
+/** Shared time-grid constants for the Day and Week calendar views — keeping
+ * them in one place means both grids stay pixel-aligned with each other. */
+export const DAY_START_HOUR = 6;
+export const DAY_END_HOUR = 22;
+export const HOUR_HEIGHT = 48;
+
+/** Packs overlapping events into side-by-side lanes (like most calendar
+ * UIs) rather than letting them stack on top of one another. Greedy: each
+ * event goes in the first lane whose last event has already ended. */
+export function assignLanes(events: CalendarEvent[]): {
+  laneOf: Map<string, number>;
+  laneCount: number;
+} {
+  const sorted = [...events].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+  const lanes: CalendarEvent[][] = [];
+  const laneOf = new Map<string, number>();
+  for (const event of sorted) {
+    const startMs = new Date(event.start).getTime();
+    let placed = false;
+    for (let i = 0; i < lanes.length; i++) {
+      const lastInLane = lanes[i][lanes[i].length - 1];
+      if (new Date(lastInLane.end).getTime() <= startMs) {
+        lanes[i].push(event);
+        laneOf.set(event.id, i);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      lanes.push([event]);
+      laneOf.set(event.id, lanes.length - 1);
+    }
+  }
+  return { laneOf, laneCount: Math.max(1, lanes.length) };
+}
 
 export function calculateStreak(habit: Habit): number {
   let streak = 0;

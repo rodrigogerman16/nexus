@@ -133,13 +133,19 @@ export function CalendarView() {
         <MonthView anchor={anchor} selected={selected} events={events} onSelectDay={selectDay} />
       )}
       {view === "week" && (
-        <WeekView anchor={anchor} selected={selected} events={events} onSelectDay={selectDay} />
+        <WeekView
+          anchor={anchor}
+          selected={selected}
+          events={events}
+          onSelectDay={selectDay}
+          onSelectEvent={openEditEvent}
+        />
       )}
       {view === "day" && (
         <DayView day={selected} events={events} onSelectEvent={openEditEvent} />
       )}
 
-      {view !== "day" && (
+      {view === "month" && (
         <div className="mt-6">
           <h3 className="mb-3 text-sm font-semibold">
             {isSameDay(selected, new Date())
@@ -150,7 +156,7 @@ export function CalendarView() {
         </div>
       )}
 
-      {view === "day" && selectedDayTasks.length > 0 && (
+      {view !== "month" && selectedDayTasks.length > 0 && (
         <div className="mt-6">
           <h3 className="mb-3 text-sm font-semibold">Tasks due</h3>
           <DayAgenda events={[]} tasks={selectedDayTasks} />

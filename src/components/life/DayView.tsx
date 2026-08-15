@@ -3,40 +3,13 @@
 import { useMemo } from "react";
 import { useTasksStore } from "@/lib/store/useTasksStore";
 import { isSameDay } from "@/lib/utils";
+import { assignLanes, DAY_END_HOUR, DAY_START_HOUR, HOUR_HEIGHT } from "@/components/life/lifeMeta";
 import type { CalendarEvent } from "@/lib/store/types";
 
 interface DayViewProps {
   day: Date;
   events: CalendarEvent[];
   onSelectEvent: (event: CalendarEvent) => void;
-}
-
-const DAY_START_HOUR = 6;
-const DAY_END_HOUR = 22;
-const HOUR_HEIGHT = 48;
-
-function assignLanes(events: CalendarEvent[]): { laneOf: Map<string, number>; laneCount: number } {
-  const sorted = [...events].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
-  const lanes: CalendarEvent[][] = [];
-  const laneOf = new Map<string, number>();
-  for (const event of sorted) {
-    const startMs = new Date(event.start).getTime();
-    let placed = false;
-    for (let i = 0; i < lanes.length; i++) {
-      const lastInLane = lanes[i][lanes[i].length - 1];
-      if (new Date(lastInLane.end).getTime() <= startMs) {
-        lanes[i].push(event);
-        laneOf.set(event.id, i);
-        placed = true;
-        break;
-      }
-    }
-    if (!placed) {
-      lanes.push([event]);
-      laneOf.set(event.id, lanes.length - 1);
-    }
-  }
-  return { laneOf, laneCount: Math.max(1, lanes.length) };
 }
 
 export function DayView({ day, events, onSelectEvent }: DayViewProps) {
