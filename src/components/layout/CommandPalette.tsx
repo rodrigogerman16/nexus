@@ -14,6 +14,7 @@ import {
   Settings,
   Sparkles,
   Sun,
+  X,
 } from "lucide-react";
 import { useUIStore } from "@/lib/store/useUIStore";
 import { useTasksStore } from "@/lib/store/useTasksStore";
@@ -118,14 +119,14 @@ export function CommandPalette() {
       open={open}
       onOpenChange={handleOpenChange}
       label="Command palette"
-      className="fixed left-1/2 top-[18%] z-50 w-[92vw] max-w-xl -translate-x-1/2 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-overlay animate-palette-in"
+      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-surface-raised animate-drawer-in md:inset-auto md:left-1/2 md:top-[18%] md:w-[92vw] md:max-w-xl md:-translate-x-1/2 md:rounded-lg md:border md:border-border md:shadow-overlay md:animate-palette-in"
       shouldFilter={false}
     >
       <div
         className="fixed inset-0 -z-10 bg-black/40 backdrop-blur-sm"
         onClick={() => handleOpenChange(false)}
       />
-      <div className="flex items-center gap-2 border-b border-border px-3">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 pt-[env(safe-area-inset-top)] md:pt-0">
         <Command.Input
           autoFocus
           value={search}
@@ -134,14 +135,21 @@ export function CommandPalette() {
           className="focus-ring h-12 w-full bg-transparent px-1 text-sm text-foreground placeholder:text-muted-foreground outline-none"
         />
         {context.type !== "dashboard" && (
-          <span className="shrink-0 whitespace-nowrap rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent">
+          <span className="max-w-[35vw] shrink-0 truncate whitespace-nowrap rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent md:max-w-none">
             {contextLabel(context)}
           </span>
         )}
+        <button
+          onClick={() => handleOpenChange(false)}
+          aria-label="Close"
+          className="focus-ring -mr-1 shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-surface-sunken hover:text-foreground md:hidden"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
 
       {answer ? (
-        <div className="max-h-[60vh] overflow-y-auto p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:max-h-[60vh] md:flex-none md:pb-4">
           <div className="mb-3 flex items-center gap-2">
             <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
               <Sparkles className="h-3 w-3" />
@@ -168,7 +176,7 @@ export function CommandPalette() {
           </button>
         </div>
       ) : (
-        <Command.List className="max-h-[60vh] overflow-y-auto p-2">
+        <Command.List className="min-h-0 flex-1 overflow-y-auto p-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] md:max-h-[60vh] md:flex-none md:pb-2">
           <Command.Empty className="py-8 text-center text-sm text-muted-foreground">
             No results found.
           </Command.Empty>
