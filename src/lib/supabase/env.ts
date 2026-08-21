@@ -14,16 +14,23 @@ function required(name: string, value: string | undefined): string {
 }
 
 export function getSupabaseUrl(): string {
-  return required("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const raw = required("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
+  // Supabase's GoTrue API rejects requests with "Invalid path specified in
+  // request URL" if the base URL carries a trailing slash or stray
+  // whitespace/newline — an easy typo when pasting into a host's env var UI.
+  // Normalizing here means a misformatted value can't silently break auth.
+  return raw.trim().replace(/\/+$/, "");
 }
 
 export function getSupabaseAnonKey(): string {
-  return required(
+  const raw = required(
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
+  return raw.trim();
 }
 
 export function getSupabaseServiceRoleKey(): string {
-  return required("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const raw = required("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY);
+  return raw.trim();
 }
