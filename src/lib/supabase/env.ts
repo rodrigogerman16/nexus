@@ -13,13 +13,17 @@ function required(name: string, value: string | undefined): string {
   return value;
 }
 
+// Supabase's dashboard shows several ready-made URLs (REST, Auth, Storage,
+// Functions) right next to the plain Project URL, so it's an easy mix-up to
+// paste `.../rest/v1` instead of the bare origin. Every Supabase client
+// (auth, REST, storage) appends its own API path on top of whatever base URL
+// it's given, so a stray suffix here produces a nested, invalid path and
+// GoTrue rejects it with "Invalid path specified in request URL".
+const KNOWN_API_SUFFIXES = /\/(rest|auth|storage|functions)\/v1\/?$/;
+
 export function getSupabaseUrl(): string {
   const raw = required("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL);
-  // Supabase's GoTrue API rejects requests with "Invalid path specified in
-  // request URL" if the base URL carries a trailing slash or stray
-  // whitespace/newline — an easy typo when pasting into a host's env var UI.
-  // Normalizing here means a misformatted value can't silently break auth.
-  return raw.trim().replace(/\/+$/, "");
+  return raw.trim().replace(KNOWN_API_SUFFIXES, "").replace(/\/+$/, "");
 }
 
 export function getSupabaseAnonKey(): string {
