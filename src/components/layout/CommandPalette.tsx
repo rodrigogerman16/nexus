@@ -4,7 +4,9 @@ import { Command } from "cmdk";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
+  Activity,
   Bell,
+  CalendarDays,
   Circle,
   FileText,
   FolderKanban,
@@ -19,6 +21,8 @@ import {
 import { useUIStore } from "@/lib/store/useUIStore";
 import { useTasksStore } from "@/lib/store/useTasksStore";
 import { useNotesStore } from "@/lib/store/useNotesStore";
+import { useLifeStore } from "@/lib/store/useLifeStore";
+import { useActivityStore } from "@/lib/store/useActivityStore";
 import { useAIContextStore, contextLabel } from "@/lib/ai/context";
 import { suggestedPrompts } from "@/lib/ai/service";
 import { askNexus } from "@/lib/ai/ask";
@@ -49,6 +53,8 @@ export function CommandPalette() {
   const tasks = useTasksStore((s) => s.tasks);
   const projects = useTasksStore((s) => s.projects);
   const notes = useNotesStore((s) => s.notes);
+  const events = useLifeStore((s) => s.events);
+  const activities = useActivityStore((s) => s.activities);
   const context = useAIContextStore((s) => s.context);
   const [search, setSearch] = useState("");
   const [answer, setAnswer] = useState<Answer | null>(null);
@@ -111,6 +117,15 @@ export function CommandPalette() {
   const matchedNotes = useMemo(
     () => (query ? notes.filter((n) => n.title.toLowerCase().includes(query)).slice(0, 5) : []),
     [notes, query]
+  );
+  const matchedEvents = useMemo(
+    () => (query ? events.filter((e) => e.title.toLowerCase().includes(query)).slice(0, 5) : []),
+    [events, query]
+  );
+  const matchedActivity = useMemo(
+    () =>
+      query ? activities.filter((a) => a.description.toLowerCase().includes(query)).slice(0, 5) : [],
+    [activities, query]
   );
   const prompts = useMemo(() => suggestedPrompts(context), [context]);
 
@@ -233,6 +248,34 @@ export function CommandPalette() {
                 <Command.Item key={n.id} onSelect={() => go("/notes")} className={itemClass}>
                   <FileText className="h-4 w-4" />
                   <span className="truncate">{n.title}</span>
+                </Command.Item>
+              ))}
+            </Command.Group>
+          )}
+
+          {matchedEvents.length > 0 && (
+            <Command.Group heading="Events" className={groupClass}>
+              {matchedEvents.map((e) => (
+                <Command.Item key={e.id} onSelect={() => go("/calendar")} className={itemClass}>
+                  <CalendarDays className="h-4 w-4" />
+                  <span className="truncate">{e.title}</span>
+                  <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                    {new Date(e.start).toLocaleTimeString(undefined, {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </Command.Item>
+              ))}
+            </Command.Group>
+          )}
+
+          {matchedActivity.length > 0 && (
+            <Command.Group heading="Activity" className={groupClass}>
+              {matchedActivity.map((a) => (
+                <Command.Item key={a.id} onSelect={() => go("/activity")} className={itemClass}>
+                  <Activity className="h-4 w-4" />
+                  <span className="truncate">{a.description}</span>
                 </Command.Item>
               ))}
             </Command.Group>
