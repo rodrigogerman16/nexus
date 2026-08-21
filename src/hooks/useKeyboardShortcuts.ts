@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useUIStore } from "@/lib/store/useUIStore";
+import { useShortcutsStore } from "@/lib/store/useShortcutsStore";
 
 const chordRoutes: Record<string, string> = {
   h: "/",
@@ -25,6 +26,7 @@ export function useKeyboardShortcuts() {
   const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
   const setShortcutsOpen = useUIStore((s) => s.setShortcutsOpen);
   const requestQuickCreate = useUIStore((s) => s.requestQuickCreate);
+  const bindings = useShortcutsStore((s) => s.bindings);
   const chordPending = useRef(false);
   const chordTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -52,33 +54,33 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      if (e.key === "/") {
+      if (e.key === bindings.search) {
         e.preventDefault();
         setCommandPaletteOpen(true);
         return;
       }
 
-      if (e.key === "?") {
+      if (e.key === bindings.help) {
         e.preventDefault();
         setShortcutsOpen(true);
         return;
       }
 
-      if (e.key === "n") {
+      if (e.key === bindings.newTask) {
         e.preventDefault();
         requestQuickCreate("task");
         router.push("/tasks");
         return;
       }
 
-      if (e.key === "N") {
+      if (e.key === bindings.newNote) {
         e.preventDefault();
         requestQuickCreate("note");
         router.push("/notes");
         return;
       }
 
-      if (e.key === "p") {
+      if (e.key === bindings.newProject) {
         e.preventDefault();
         requestQuickCreate("project");
         router.push("/projects");
@@ -90,5 +92,5 @@ export function useKeyboardShortcuts() {
       document.removeEventListener("keydown", onKeyDown);
       clearTimeout(chordTimeout.current);
     };
-  }, [router, setCommandPaletteOpen, setShortcutsOpen, requestQuickCreate]);
+  }, [router, setCommandPaletteOpen, setShortcutsOpen, requestQuickCreate, bindings]);
 }

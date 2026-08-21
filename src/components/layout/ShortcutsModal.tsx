@@ -3,16 +3,14 @@
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/Dialog";
 import { useUIStore } from "@/lib/store/useUIStore";
 import { navItems } from "@/components/layout/nav";
+import { SHORTCUT_ACTIONS, useShortcutsStore } from "@/lib/store/useShortcutsStore";
 
-const actionShortcuts: { keys: string[]; label: string }[] = [
-  { keys: ["⌘", "K"], label: "Open command palette" },
-  { keys: ["/"], label: "Search" },
-  { keys: ["N"], label: "New task" },
-  { keys: ["Shift", "N"], label: "New note" },
-  { keys: ["P"], label: "New project" },
-  { keys: ["Esc"], label: "Close dialog / palette" },
-  { keys: ["?"], label: "Show this shortcuts panel" },
-];
+function displayKeys(key: string): string[] {
+  if (key === " ") return ["Space"];
+  if (/^[a-z]$/.test(key)) return [key.toUpperCase()];
+  if (/^[A-Z]$/.test(key)) return ["Shift", key];
+  return [key];
+}
 
 function Kbd({ children }: { children: string }) {
   return (
@@ -25,6 +23,13 @@ function Kbd({ children }: { children: string }) {
 export function ShortcutsModal() {
   const open = useUIStore((s) => s.shortcutsOpen);
   const setOpen = useUIStore((s) => s.setShortcutsOpen);
+  const bindings = useShortcutsStore((s) => s.bindings);
+
+  const actionShortcuts: { keys: string[]; label: string }[] = [
+    { keys: ["⌘", "K"], label: "Open command palette" },
+    ...SHORTCUT_ACTIONS.map((a) => ({ keys: displayKeys(bindings[a.id]), label: a.label })),
+    { keys: ["Esc"], label: "Close dialog / palette" },
+  ];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -40,13 +45,16 @@ export function ShortcutsModal() {
                 <li key={s.label} className="flex items-center justify-between text-sm">
                   <span className="text-foreground">{s.label}</span>
                   <span className="flex gap-1">
-                    {s.keys.map((k) => (
-                      <Kbd key={k}>{k}</Kbd>
+                    {s.keys.map((k, i) => (
+                      <Kbd key={i}>{k}</Kbd>
                     ))}
                   </span>
                 </li>
               ))}
             </ul>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Customize these in Settings → Keyboard.
+            </p>
           </div>
           <div>
             <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
