@@ -6,6 +6,7 @@ export type AIResponseStyle = "concise" | "balanced" | "detailed";
 interface SettingsState {
   fullName: string;
   email: string;
+  avatarUrl: string;
   aiResponseStyle: AIResponseStyle;
   aiContextEnabled: boolean;
   notifyTaskReminders: boolean;
@@ -13,7 +14,7 @@ interface SettingsState {
   notifyEmail: boolean;
   notifyPush: boolean;
   privacyShareUsageData: boolean;
-  setAccount: (patch: Partial<Pick<SettingsState, "fullName" | "email">>) => void;
+  setAccount: (patch: Partial<Pick<SettingsState, "fullName" | "email" | "avatarUrl">>) => void;
   setAIResponseStyle: (style: AIResponseStyle) => void;
   setAIContextEnabled: (enabled: boolean) => void;
   setNotificationPref: (
@@ -28,6 +29,7 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       fullName: "Rodrigo",
       email: "rodrigoezequielgerman@gmail.com",
+      avatarUrl: "",
       aiResponseStyle: "balanced",
       aiContextEnabled: true,
       notifyTaskReminders: true,

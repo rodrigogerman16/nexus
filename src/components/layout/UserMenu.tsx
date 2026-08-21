@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { HelpCircle, LogOut, Moon, Settings, Sun } from "lucide-react";
-import { Avatar, AvatarFallback, initialsFor } from "@/components/ui/Avatar";
+import { Avatar, AvatarFallback, AvatarImage, initialsFor } from "@/components/ui/Avatar";
 import {
   Dropdown,
   DropdownContent,
@@ -28,6 +28,7 @@ export function UserMenu({
   const { theme, setTheme } = useTheme();
   const fullName = useSettingsStore((s) => s.fullName);
   const email = useSettingsStore((s) => s.email);
+  const avatarUrl = useSettingsStore((s) => s.avatarUrl);
   const setShortcutsOpen = useUIStore((s) => s.setShortcutsOpen);
 
   return (
@@ -42,6 +43,7 @@ export function UserMenu({
           aria-label={`${fullName} — account menu`}
         >
           <Avatar>
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={fullName} />}
             <AvatarFallback>{initialsFor(fullName)}</AvatarFallback>
           </Avatar>
           {!collapsed && (

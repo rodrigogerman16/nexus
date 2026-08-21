@@ -5,6 +5,7 @@ import { Keyboard as KeyboardIcon, Monitor, Moon, Sun } from "lucide-react";
 import { useHasMounted } from "@/hooks/useHasMounted";
 import { useSettingsStore, type AIResponseStyle } from "@/lib/store/useSettingsStore";
 import { useUIStore } from "@/lib/store/useUIStore";
+import { Avatar, AvatarFallback, AvatarImage, initialsFor } from "@/components/ui/Avatar";
 import { Input } from "@/components/ui/Input";
 import { Switch } from "@/components/ui/Switch";
 import { Button } from "@/components/ui/Button";
@@ -56,6 +57,7 @@ export default function SettingsPage() {
 
   const fullName = useSettingsStore((s) => s.fullName);
   const email = useSettingsStore((s) => s.email);
+  const avatarUrl = useSettingsStore((s) => s.avatarUrl);
   const setAccount = useSettingsStore((s) => s.setAccount);
   const aiResponseStyle = useSettingsStore((s) => s.aiResponseStyle);
   const setAIResponseStyle = useSettingsStore((s) => s.setAIResponseStyle);
@@ -94,6 +96,20 @@ export default function SettingsPage() {
             onChange={(e) => setAccount({ email: e.target.value })}
             className="w-56"
           />
+        </Row>
+        <Row label="Avatar" hint="Paste an image URL, or leave blank to use your initials.">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={fullName} />}
+              <AvatarFallback className="text-sm">{initialsFor(fullName)}</AvatarFallback>
+            </Avatar>
+            <Input
+              value={avatarUrl}
+              onChange={(e) => setAccount({ avatarUrl: e.target.value.trim() })}
+              placeholder="https://…"
+              className="w-56"
+            />
+          </div>
         </Row>
       </SettingsSection>
 
