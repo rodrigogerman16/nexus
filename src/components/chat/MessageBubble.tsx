@@ -31,7 +31,7 @@ export function MessageBubble({ role, content, actions }: MessageBubbleProps) {
       <div className={cn("max-w-[85%] sm:max-w-[75%]", isUser && "flex flex-col items-end")}>
         <div
           className={cn(
-            "rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
+            "rounded-xl px-3.5 py-2.5 text-sm leading-relaxed",
             isUser
               ? "rounded-tr-sm bg-accent text-accent-foreground"
               : "rounded-tl-sm border border-border bg-surface text-foreground"

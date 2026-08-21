@@ -23,7 +23,7 @@ export function MobileMoreDrawer({
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=open]:animate-fade-in" />
-        <DialogPrimitive.Content className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl border-t border-border bg-surface-raised p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] shadow-overlay focus:outline-none data-[state=open]:animate-drawer-in">
+        <DialogPrimitive.Content className="fixed inset-x-0 bottom-0 z-50 rounded-t-lg border-t border-border bg-surface-raised p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] shadow-overlay focus:outline-none data-[state=open]:animate-drawer-in">
             <DialogPrimitive.Title className="sr-only">More</DialogPrimitive.Title>
           <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-border-strong" />
           <div className="grid grid-cols-3 gap-1.5">
