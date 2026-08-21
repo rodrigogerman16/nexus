@@ -55,13 +55,16 @@ export const useTasksStore = create<TasksState>()((set, get) => ({
     set({ userId, status: "loading" });
     const supabase = createClient();
     const [tasksRes, projectsRes] = await Promise.all([
-      supabase.from("tasks").select("*").order("position", { ascending: true }),
-      supabase.from("projects").select("*").order("created_at", { ascending: false }),
+      supabase.from("tasks").select("*").order("position", { ascending: true }).limit(500),
+      supabase.from("projects").select("*").order("created_at", { ascending: false }).limit(500),
     ]);
     if (tasksRes.error || projectsRes.error) {
       console.error(tasksRes.error ?? projectsRes.error);
       set({ status: "error" });
-      toast.error("Couldn't load your tasks and projects.");
+      toast.error("Couldn't load your tasks and projects.", {
+        label: "Retry",
+        onClick: () => get().hydrate(userId),
+      });
       return;
     }
     set({

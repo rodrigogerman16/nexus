@@ -36,11 +36,15 @@ export const useNotificationsStore = create<NotificationsState>()((set, get) => 
     const { data, error } = await supabase
       .from("notifications")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(200);
     if (error) {
       console.error(error);
       set({ status: "error" });
-      toast.error("Couldn't load your notifications.");
+      toast.error("Couldn't load your notifications.", {
+        label: "Retry",
+        onClick: () => get().hydrate(userId),
+      });
       return;
     }
     set({ notifications: data.map(dbNotificationToNotification), status: "ready" });

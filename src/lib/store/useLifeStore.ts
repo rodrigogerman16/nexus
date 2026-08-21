@@ -54,14 +54,17 @@ export const useLifeStore = create<LifeState>()((set, get) => ({
     set({ userId, status: "loading" });
     const supabase = createClient();
     const [eventsRes, habitsRes, goalsRes] = await Promise.all([
-      supabase.from("calendar_events").select("*").order("start_time", { ascending: true }),
-      supabase.from("habits").select("*").order("created_at", { ascending: true }),
-      supabase.from("goals").select("*").order("created_at", { ascending: true }),
+      supabase.from("calendar_events").select("*").order("start_time", { ascending: true }).limit(500),
+      supabase.from("habits").select("*").order("created_at", { ascending: true }).limit(500),
+      supabase.from("goals").select("*").order("created_at", { ascending: true }).limit(500),
     ]);
     if (eventsRes.error || habitsRes.error || goalsRes.error) {
       console.error(eventsRes.error ?? habitsRes.error ?? goalsRes.error);
       set({ status: "error" });
-      toast.error("Couldn't load your calendar, habits, and goals.");
+      toast.error("Couldn't load your calendar, habits, and goals.", {
+        label: "Retry",
+        onClick: () => get().hydrate(userId),
+      });
       return;
     }
     set({

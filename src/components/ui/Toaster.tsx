@@ -39,6 +39,17 @@ export function Toaster() {
             >
               <Icon className={cn("h-4 w-4 shrink-0", colorByVariant[t.variant])} />
               <p className="min-w-0 flex-1 text-sm text-foreground">{t.message}</p>
+              {t.action && (
+                <button
+                  onClick={() => {
+                    t.action?.onClick();
+                    dismiss(t.id);
+                  }}
+                  className="focus-ring shrink-0 rounded px-1.5 py-0.5 text-sm font-medium text-accent hover:underline"
+                >
+                  {t.action.label}
+                </button>
+              )}
               <button
                 onClick={() => dismiss(t.id)}
                 aria-label="Dismiss notification"

@@ -36,11 +36,15 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
     const { data, error } = await supabase
       .from("notes")
       .select("*")
-      .order("updated_at", { ascending: false });
+      .order("updated_at", { ascending: false })
+      .limit(500);
     if (error) {
       console.error(error);
       set({ status: "error" });
-      toast.error("Couldn't load your notes.");
+      toast.error("Couldn't load your notes.", {
+        label: "Retry",
+        onClick: () => get().hydrate(userId),
+      });
       return;
     }
     set({ notes: data.map(dbNoteToNote), status: "ready" });
