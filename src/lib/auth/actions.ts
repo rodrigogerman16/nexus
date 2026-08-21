@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -8,13 +9,26 @@ export interface AuthActionState {
   message?: string;
 }
 
+const signInSchema = z.object({
+  email: z.string().trim().min(1),
+  password: z.string().min(1),
+});
+
+const signUpSchema = z.object({
+  email: z.string().trim().min(1),
+  password: z.string().min(8),
+});
+
 export async function signIn(
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-  if (!email || !password) return { error: "Enter your email and password." };
+  const parsed = signInSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) return { error: "Enter your email and password." };
+  const { email, password } = parsed.data;
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -27,10 +41,19 @@ export async function signUp(
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-  if (!email || !password) return { error: "Enter an email and password." };
-  if (password.length < 8) return { error: "Password must be at least 8 characters." };
+  const parsed = signUpSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) {
+    const passwordIssue = parsed.error.issues.find((i) => i.path[0] === "password");
+    const otherIssue = parsed.error.issues.find((i) => i.path[0] !== "password");
+    if (!otherIssue && passwordIssue?.code === "too_small") {
+      return { error: "Password must be at least 8 characters." };
+    }
+    return { error: "Enter an email and password." };
+  }
+  const { email, password } = parsed.data;
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({ email, password });

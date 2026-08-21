@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -6,6 +7,11 @@ export const runtime = "nodejs";
 const MAX_INPUT_LENGTH = 4000;
 const MAX_SYSTEM_LENGTH = 12000;
 const DEFAULT_MODEL = "claude-haiku-4-5";
+
+const requestSchema = z.object({
+  input: z.string().trim().min(1).max(MAX_INPUT_LENGTH),
+  system: z.string().max(MAX_SYSTEM_LENGTH).default(""),
+});
 
 /**
  * Real-LLM backend for askNexus() (src/lib/ai/ask.ts). Requires a signed-in
@@ -28,21 +34,18 @@ export async function POST(request: Request) {
     return Response.json({ error: "not_configured" }, { status: 501 });
   }
 
-  let body: { input?: unknown; system?: unknown };
+  let json: unknown;
   try {
-    body = await request.json();
+    json = await request.json();
   } catch {
     return Response.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  const input = typeof body.input === "string" ? body.input.trim() : "";
-  const system = typeof body.system === "string" ? body.system : "";
-  if (!input || input.length > MAX_INPUT_LENGTH) {
+  const parsed = requestSchema.safeParse(json);
+  if (!parsed.success) {
     return Response.json({ error: "invalid_input" }, { status: 400 });
   }
-  if (system.length > MAX_SYSTEM_LENGTH) {
-    return Response.json({ error: "invalid_input" }, { status: 400 });
-  }
+  const { input, system } = parsed.data;
 
   const anthropic = new Anthropic({ apiKey });
   const model = process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
