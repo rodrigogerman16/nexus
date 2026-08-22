@@ -1,25 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
-import { Keyboard as KeyboardIcon, Monitor, Moon, Sun } from "lucide-react";
+import { Monitor, Moon, Sun } from "lucide-react";
 import { useHasMounted } from "@/hooks/useHasMounted";
 import { useSettingsStore, type AIResponseStyle } from "@/lib/store/useSettingsStore";
-import { useUIStore } from "@/lib/store/useUIStore";
-import {
-  RESERVED_KEYS,
-  SHORTCUT_ACTIONS,
-  useShortcutsStore,
-  type ShortcutActionId,
-} from "@/lib/store/useShortcutsStore";
-import { toast } from "@/lib/store/useToastStore";
 import { useTasksStore } from "@/lib/store/useTasksStore";
-import { exportUserDataToFile, deleteAllUserData } from "@/lib/account/dataManagement";
+import { toast } from "@/lib/store/useToastStore";
+import { exportUserDataToFile } from "@/lib/account/dataManagement";
 import { Avatar, AvatarFallback, AvatarImage, initialsFor } from "@/components/ui/Avatar";
 import { Input } from "@/components/ui/Input";
 import { Switch } from "@/components/ui/Switch";
 import { Button } from "@/components/ui/Button";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/Dialog";
 import {
   Select,
   SelectContent,
@@ -27,53 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/Select";
+import { SettingsSection, Row } from "@/components/settings/SettingsLayout";
+import { KeyboardShortcutsSection } from "@/components/settings/KeyboardShortcutsSection";
+import { DeleteAllDataDialog } from "@/components/settings/DeleteAllDataDialog";
 import { cn } from "@/lib/utils";
-
-const DELETE_CONFIRM_PHRASE = "DELETE";
-
-function displayKey(key: string): string {
-  if (key === " ") return "Space";
-  if (/^[a-z]$/.test(key)) return key.toUpperCase();
-  if (/^[A-Z]$/.test(key)) return `Shift+${key}`;
-  return key;
-}
-
-function SettingsSection({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="border-b border-border py-6 first:pt-0 last:border-0">
-      <div className="mb-4">
-        <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
-        {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
-      </div>
-      <div className="space-y-4">{children}</div>
-    </section>
-  );
-}
-
-function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <div>
-        <p className="text-sm text-foreground">{label}</p>
-        {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
-      </div>
-      {children}
-    </div>
-  );
-}
 
 export default function SettingsPage() {
   const mounted = useHasMounted();
   const { theme, setTheme } = useTheme();
-  const setShortcutsOpen = useUIStore((s) => s.setShortcutsOpen);
 
   const fullName = useSettingsStore((s) => s.fullName);
   const email = useSettingsStore((s) => s.email);
@@ -92,63 +44,11 @@ export default function SettingsPage() {
   const setPrivacyShareUsageData = useSettingsStore((s) => s.setPrivacyShareUsageData);
 
   const userId = useTasksStore((s) => s.userId);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState("");
-  const [deleting, setDeleting] = useState(false);
 
   function handleExport() {
     exportUserDataToFile();
     toast.success("Your data was exported.");
   }
-
-  async function handleDeleteConfirm() {
-    if (!userId || deleteConfirmText !== DELETE_CONFIRM_PHRASE) return;
-    setDeleting(true);
-    const { error } = await deleteAllUserData(userId);
-    setDeleting(false);
-    if (error) {
-      toast.error("Couldn't delete your data — try again.");
-      return;
-    }
-    setDeleteDialogOpen(false);
-    setDeleteConfirmText("");
-    toast.success("All your data has been deleted.");
-  }
-
-  const shortcutBindings = useShortcutsStore((s) => s.bindings);
-  const setShortcutBinding = useShortcutsStore((s) => s.setBinding);
-  const resetShortcutBinding = useShortcutsStore((s) => s.resetBinding);
-  const resetAllShortcuts = useShortcutsStore((s) => s.resetAll);
-  const [listeningId, setListeningId] = useState<ShortcutActionId | null>(null);
-
-  useEffect(() => {
-    if (!listeningId) return;
-    const actionId = listeningId;
-    function onKeyDown(e: KeyboardEvent) {
-      if (["Shift", "Control", "Alt", "Meta"].includes(e.key)) return;
-      e.preventDefault();
-      e.stopPropagation();
-      if (e.key === "Escape") {
-        setListeningId(null);
-        return;
-      }
-      if (RESERVED_KEYS.includes(e.key)) {
-        toast.error(`"${displayKey(e.key)}" is reserved and can't be reassigned.`);
-        return;
-      }
-      const conflict = SHORTCUT_ACTIONS.find(
-        (a) => a.id !== actionId && shortcutBindings[a.id] === e.key
-      );
-      if (conflict) {
-        toast.error(`"${displayKey(e.key)}" is already used for "${conflict.label}".`);
-        return;
-      }
-      setShortcutBinding(actionId, e.key);
-      setListeningId(null);
-    }
-    document.addEventListener("keydown", onKeyDown, true);
-    return () => document.removeEventListener("keydown", onKeyDown, true);
-  }, [listeningId, shortcutBindings, setShortcutBinding]);
 
   const themeOptions = [
     { value: "light", label: "Light", icon: Sun },
@@ -265,117 +165,22 @@ export default function SettingsPage() {
         </Row>
       </SettingsSection>
 
-      <SettingsSection
-        title="Keyboard"
-        description="Click Change, then press the key you want to use instead."
-      >
-        {SHORTCUT_ACTIONS.map((action) => {
-          const key = shortcutBindings[action.id];
-          const isCustom = key !== action.defaultKey;
-          const listening = listeningId === action.id;
-          return (
-            <Row key={action.id} label={action.label}>
-              <div className="flex items-center gap-2">
-                {listening ? (
-                  <span className="rounded border border-accent bg-accent-soft px-2 py-1 text-xs font-medium text-accent">
-                    Press a key…
-                  </span>
-                ) : (
-                  <kbd className="rounded border border-border-strong bg-surface px-2 py-1 font-mono text-xs text-muted-foreground">
-                    {displayKey(key)}
-                  </kbd>
-                )}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setListeningId(listening ? null : action.id)}
-                >
-                  {listening ? "Cancel" : "Change"}
-                </Button>
-                {isCustom && !listening && (
-                  <Button variant="ghost" size="sm" onClick={() => resetShortcutBinding(action.id)}>
-                    Reset
-                  </Button>
-                )}
-              </div>
-            </Row>
-          );
-        })}
-        {SHORTCUT_ACTIONS.some((a) => shortcutBindings[a.id] !== a.defaultKey) && (
-          <Row label="Reset all shortcuts" hint="Restore every shortcut above to its default key.">
-            <Button variant="ghost" size="sm" onClick={resetAllShortcuts}>
-              Reset all
-            </Button>
-          </Row>
-        )}
-        <Row label="Full list" hint="See every keyboard shortcut available in NEXUS, including navigation.">
-          <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => setShortcutsOpen(true)}>
-            <KeyboardIcon className="h-3.5 w-3.5" /> View shortcuts
-          </Button>
-        </Row>
-      </SettingsSection>
+      <KeyboardShortcutsSection />
 
       <SettingsSection title="Privacy">
         <Row
           label="Share usage data"
           hint="Help improve NEXUS by sharing anonymous product usage data."
         >
-          <Switch
-            checked={privacyShareUsageData}
-            onCheckedChange={setPrivacyShareUsageData}
-          />
+          <Switch checked={privacyShareUsageData} onCheckedChange={setPrivacyShareUsageData} />
         </Row>
         <Row label="Export your data" hint="Download everything NEXUS has stored for you as JSON.">
           <Button variant="secondary" size="sm" onClick={handleExport}>
             Export data
           </Button>
         </Row>
-        <Row label="Delete all data" hint="Permanently delete every task, project, note, and event.">
-          <Button variant="danger" size="sm" onClick={() => setDeleteDialogOpen(true)}>
-            Delete all data
-          </Button>
-        </Row>
+        <DeleteAllDataDialog userId={userId} />
       </SettingsSection>
-
-      <Dialog
-        open={deleteDialogOpen}
-        onOpenChange={(next) => {
-          setDeleteDialogOpen(next);
-          if (!next) setDeleteConfirmText("");
-        }}
-      >
-        <DialogContent>
-          <DialogTitle>Delete all your data?</DialogTitle>
-          <DialogDescription>
-            This permanently deletes every task, project, note, event, habit, goal, and activity
-            entry tied to your account. This can&rsquo;t be undone.
-          </DialogDescription>
-          <div className="mt-4">
-            <label className="mb-1.5 block text-xs text-muted-foreground">
-              Type {DELETE_CONFIRM_PHRASE} to confirm
-            </label>
-            <Input
-              value={deleteConfirmText}
-              onChange={(e) => setDeleteConfirmText(e.target.value)}
-              placeholder={DELETE_CONFIRM_PHRASE}
-              autoFocus
-            />
-          </div>
-          <div className="mt-5 flex justify-end gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              disabled={deleteConfirmText !== DELETE_CONFIRM_PHRASE || deleting}
-              onClick={handleDeleteConfirm}
-            >
-              {deleting ? "Deleting…" : "Permanently delete"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
