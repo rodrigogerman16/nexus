@@ -5,28 +5,7 @@ import { useNotificationsStore } from "@/lib/store/useNotificationsStore";
 import { useSettingsStore } from "@/lib/store/useSettingsStore";
 import { computeTimeOfDayInsight } from "@/lib/ai/insights";
 import { isSameDay, toDateKey } from "@/lib/utils";
-
-const SEEN_KEY_PREFIX = "nexus-notified";
-
-function getSeenIds(kind: string, dateKey: string): Set<string> {
-  try {
-    const raw = localStorage.getItem(`${SEEN_KEY_PREFIX}:${kind}:${dateKey}`);
-    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function markSeen(kind: string, dateKey: string, id: string) {
-  const seen = getSeenIds(kind, dateKey);
-  seen.add(id);
-  try {
-    localStorage.setItem(`${SEEN_KEY_PREFIX}:${kind}:${dateKey}`, JSON.stringify([...seen]));
-  } catch {
-    // Best-effort — a full/unavailable localStorage just means this device
-    // might see a duplicate notification, not a broken app.
-  }
-}
+import { getSeenIds, markSeen } from "@/lib/dedupeOncePerDay";
 
 /**
  * Generates the notification types spec §26 lists that aren't tied to a
@@ -79,4 +58,23 @@ export function generateAmbientNotifications() {
       markSeen("ai_suggestion", dateKey, "shown");
     }
   }
+}
+
+/**
+ * Logs "NEXUS generated your daily briefing" to the activity feed (spec
+ * §27's own example entry) once per calendar day. Lives here rather than in
+ * AIBriefCard itself: that card mounts as a child of the app shell, so its
+ * own effects commit *before* useHydrateStores' — calling addActivity from
+ * there would race hydration and fire while userId is still null, meaning
+ * the write never reaches Supabase and gets silently overwritten the moment
+ * hydration's `set({ activities: data... })` lands.
+ */
+export function logDailyBriefingActivity() {
+  const dateKey = toDateKey(new Date());
+  if (getSeenIds("ai_briefing", dateKey).has("shown")) return;
+  useActivityStore.getState().addActivity({
+    type: "ai_briefing",
+    description: "NEXUS generated your daily briefing",
+  });
+  markSeen("ai_briefing", dateKey, "shown");
 }

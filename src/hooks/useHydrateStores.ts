@@ -7,7 +7,7 @@ import { useNotesStore } from "@/lib/store/useNotesStore";
 import { useLifeStore } from "@/lib/store/useLifeStore";
 import { useActivityStore } from "@/lib/store/useActivityStore";
 import { useNotificationsStore } from "@/lib/store/useNotificationsStore";
-import { generateAmbientNotifications } from "@/lib/notifications/generateAmbient";
+import { generateAmbientNotifications, logDailyBriefingActivity } from "@/lib/notifications/generateAmbient";
 
 /** Loads the signed-in user's Supabase-backed data (tasks, projects, notes,
  * calendar events, habits, goals, activity, notifications) once on mount,
@@ -37,6 +37,7 @@ export function useHydrateStores() {
       if (id && !generatedAmbientRef.current) {
         generatedAmbientRef.current = true;
         generateAmbientNotifications();
+        logDailyBriefingActivity();
       }
     };
 

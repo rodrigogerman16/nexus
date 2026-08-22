@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { generateAmbientNotifications } from "@/lib/notifications/generateAmbient";
+import { generateAmbientNotifications, logDailyBriefingActivity } from "@/lib/notifications/generateAmbient";
 import { useTasksStore } from "@/lib/store/useTasksStore";
 import { useLifeStore } from "@/lib/store/useLifeStore";
 import { useActivityStore } from "@/lib/store/useActivityStore";
@@ -89,5 +89,15 @@ describe("generateAmbientNotifications", () => {
     expect(useNotificationsStore.getState().notifications).toContainEqual(
       expect.objectContaining({ type: "ai_suggestion" })
     );
+  });
+});
+
+describe("logDailyBriefingActivity", () => {
+  it("logs an ai_briefing activity entry once per day", () => {
+    logDailyBriefingActivity();
+    logDailyBriefingActivity();
+    const entries = useActivityStore.getState().activities.filter((a) => a.type === "ai_briefing");
+    expect(entries).toHaveLength(1);
+    expect(entries[0].description).toBe("NEXUS generated your daily briefing");
   });
 });
