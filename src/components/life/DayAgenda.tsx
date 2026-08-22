@@ -26,6 +26,7 @@ export function DayAgenda({ events, tasks, onSelectEvent }: DayAgendaProps) {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2 }}
               onClick={() => onSelectEvent?.(event)}
               className="focus-ring flex w-full items-center gap-3 rounded-lg border border-border bg-surface p-3 text-left transition-colors hover:border-border-strong"
             >
