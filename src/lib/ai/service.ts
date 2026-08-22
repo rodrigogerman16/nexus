@@ -21,6 +21,31 @@ function dashboardResponse(input: string): AIResponse | null {
   const topLevel = tasks.filter((t) => !t.parentTaskId);
   const today = new Date();
 
+  // Daily brief — checked first because it overlaps in phrasing with the
+  // schedule-planning intent below ("plan my day" vs "plan my afternoon").
+  // Without this priority, "plan my day" would fall through to the
+  // schedule-block planner instead of the tasks/schedule rundown it's
+  // actually asking for.
+  if (
+    lower.includes("plan my day") ||
+    lower.includes("what's on my plate") ||
+    lower.includes("what is on my plate")
+  ) {
+    const dailyTasks = topLevel.filter((t) => t.status !== "completed").slice(0, 5);
+    const dailyEvents = events.slice(0, 3);
+    const taskLines = dailyTasks.map((t) => `- ${t.title}`).join("\n") || "- Nothing urgent on your list";
+    const eventLines =
+      dailyEvents
+        .map(
+          (e) =>
+            `- ${e.title} at ${new Date(e.start).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`
+        )
+        .join("\n") || "- No meetings scheduled";
+    return {
+      content: `Here's the shape of your day:\n\n**Tasks**\n${taskLines}\n\n**Schedule**\n${eventLines}\n\nWant me to add anything else to the list?`,
+    };
+  }
+
   if (/focus|priorit|what should i/.test(lower)) {
     const dueToday = topLevel.filter(
       (t) => t.status !== "completed" && t.dueDate && isSameDay(t.dueDate, today)

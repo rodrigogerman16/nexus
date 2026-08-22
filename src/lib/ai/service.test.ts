@@ -106,6 +106,21 @@ describe("generateContextualResponse — dashboard context", () => {
     expect(result.content).toContain("Calendar");
   });
 
+  it("produces a daily brief (not a schedule) for a 'plan my day' request", () => {
+    // Regression guard: "plan my day" and "plan my afternoon" both matched
+    // the schedule-planner's regex before the daily-brief check was given
+    // priority, so this used to (wrongly) return a calendar plan instead of
+    // the tasks/schedule rundown the AIBriefCard depends on.
+    useTasksStore.setState({
+      tasks: [makeTask({ id: "t1", title: "Ship the release" })],
+      projects: [],
+    });
+    const result = generateContextualResponse("plan my day", { type: "dashboard" });
+    expect(result.content).toContain("Here's the shape of your day");
+    expect(result.content).toContain("Ship the release");
+    expect(result.content).not.toContain("Here's a possible plan");
+  });
+
   it("falls back to the generic assistant for unmatched dashboard input", () => {
     const result = generateContextualResponse("hi there", { type: "dashboard" });
     expect(result.content).toContain("I can add tasks");
