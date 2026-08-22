@@ -18,6 +18,26 @@ export function computeFocusTimeMinutes(tasks: Task[]): number {
     .reduce((sum, t) => sum + (t.estimatedDurationMinutes ?? 0), 0);
 }
 
+/**
+ * The weekday with the most completed tasks across all history — the
+ * "Most productive days" figure spec §28 lists as its own metric,
+ * distinct from the Weekly Activity chart's last-7-days bars. Mirrors
+ * computeBestHabitDay's weekday-tally approach, applied to task
+ * completions instead of habit check-ins.
+ */
+export function computeMostProductiveDay(activities: ActivityItem[]): string | null {
+  const totalsByWeekday = [0, 0, 0, 0, 0, 0, 0];
+  for (const activity of activities) {
+    if (activity.type !== "task_completed") continue;
+    totalsByWeekday[new Date(activity.createdAt).getDay()] += 1;
+  }
+  const max = Math.max(...totalsByWeekday);
+  if (max === 0) return null;
+  const weekdayIndex = totalsByWeekday.indexOf(max);
+  // An arbitrary Sunday-anchored week — only used to resolve a weekday name.
+  return new Date(2024, 0, 7 + weekdayIndex).toLocaleDateString(undefined, { weekday: "long" });
+}
+
 export function computeBestHabitDay(habits: Habit[]): string | null {
   const totalsByWeekday = [0, 0, 0, 0, 0, 0, 0];
   for (const habit of habits) {

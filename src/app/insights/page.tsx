@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
+  CalendarDays,
   CheckCircle2,
   Clock,
   FolderKanban,
@@ -20,6 +21,7 @@ import { ProjectProgressChart } from "@/components/insights/ProjectProgressChart
 import {
   computeBestHabitDay,
   computeFocusTimeMinutes,
+  computeMostProductiveDay,
   computeTimeOfDayInsight,
   formatFocusTime,
 } from "@/lib/ai/insights";
@@ -43,6 +45,7 @@ export default function InsightsPage() {
     return { completed, completionRate, activeProjects, overdue, focusMinutes };
   }, [tasks, projects]);
 
+  const mostProductiveDay = useMemo(() => computeMostProductiveDay(activities), [activities]);
   const bestDay = useMemo(() => computeBestHabitDay(habits), [habits]);
   const timeOfDayInsight = useMemo(
     () => computeTimeOfDayInsight(activities, tasks),
@@ -60,12 +63,18 @@ export default function InsightsPage() {
     <div className="mx-auto max-w-4xl p-4 md:p-6">
       <h1 className="mb-6 text-lg font-semibold tracking-tight">Insights</h1>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <StatTile label="Tasks completed" value={String(stats.completed)} icon={CheckCircle2} />
         <StatTile label="Completion rate" value={`${stats.completionRate}%`} icon={TrendingUp} />
         <StatTile label="Focus time" value={formatFocusTime(stats.focusMinutes)} icon={Clock} />
         <StatTile label="Active projects" value={String(stats.activeProjects)} icon={FolderKanban} />
         <StatTile label="Overdue tasks" value={String(stats.overdue)} icon={AlertTriangle} />
+        <StatTile
+          label="Most productive day"
+          value={mostProductiveDay ?? "—"}
+          icon={CalendarDays}
+          hint={mostProductiveDay ? undefined : "Complete a few tasks to see this"}
+        />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">

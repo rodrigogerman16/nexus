@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   computeBestHabitDay,
   computeFocusTimeMinutes,
+  computeMostProductiveDay,
   computeTimeOfDayInsight,
   formatFocusTime,
 } from "@/lib/ai/insights";
@@ -94,6 +95,24 @@ describe("computeBestHabitDay", () => {
   it("ignores false completion entries", () => {
     const habits = [makeHabit({ id: "h1", completions: { "2026-01-05": false } })];
     expect(computeBestHabitDay(habits)).toBeNull();
+  });
+});
+
+describe("computeMostProductiveDay", () => {
+  it("returns null when there are no task_completed activities", () => {
+    expect(computeMostProductiveDay([])).toBeNull();
+    expect(computeMostProductiveDay([makeActivity({ id: "a1", type: "task_created" })])).toBeNull();
+  });
+
+  it("returns the weekday name with the most task completions", () => {
+    // 2026-01-05 and 2026-01-12 are both Mondays; 2026-01-06 is a Tuesday.
+    const activities = [
+      makeActivity({ id: "a1", createdAt: "2026-01-05T08:00:00.000Z" }),
+      makeActivity({ id: "a2", createdAt: "2026-01-12T08:00:00.000Z" }),
+      makeActivity({ id: "a3", createdAt: "2026-01-06T08:00:00.000Z" }),
+    ];
+    const expectedMonday = new Date(2024, 0, 8).toLocaleDateString(undefined, { weekday: "long" });
+    expect(computeMostProductiveDay(activities)).toBe(expectedMonday);
   });
 });
 
