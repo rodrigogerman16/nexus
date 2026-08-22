@@ -1,6 +1,6 @@
 "use client";
 
-import { Command } from "cmdk";
+import { Command, defaultFilter } from "cmdk";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
@@ -39,6 +39,24 @@ interface Answer {
   question: string;
   content: string;
   streaming: boolean;
+}
+
+/**
+ * Ranks and filters items by cmdk's own fuzzy-match scorer (spec §24 —
+ * "the command palette should support fuzzy search"). Used instead of a
+ * plain substring check so e.g. "wbst" still finds "Website Redesign",
+ * and shouldFilter={false} below only opts out of cmdk's *automatic*
+ * filtering — this app still wants fuzzy matching, just applied across
+ * grouped, heterogeneous data (tasks/projects/notes/events/activity)
+ * rather than cmdk's single flat item list.
+ */
+function fuzzyMatches<T>(items: T[], getText: (item: T) => string, search: string, limit = 5): T[] {
+  return items
+    .map((item) => ({ item, score: defaultFilter(getText(item), search) }))
+    .filter((r) => r.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((r) => r.item);
 }
 
 export function CommandPalette() {
@@ -105,26 +123,25 @@ export function CommandPalette() {
     });
   }
 
-  const query = search.trim().toLowerCase();
+  const query = search.trim();
   const matchedTasks = useMemo(
-    () => (query ? tasks.filter((t) => t.title.toLowerCase().includes(query)).slice(0, 5) : []),
+    () => (query ? fuzzyMatches(tasks, (t) => t.title, query) : []),
     [tasks, query]
   );
   const matchedProjects = useMemo(
-    () => (query ? projects.filter((p) => p.name.toLowerCase().includes(query)).slice(0, 5) : []),
+    () => (query ? fuzzyMatches(projects, (p) => p.name, query) : []),
     [projects, query]
   );
   const matchedNotes = useMemo(
-    () => (query ? notes.filter((n) => n.title.toLowerCase().includes(query)).slice(0, 5) : []),
+    () => (query ? fuzzyMatches(notes, (n) => n.title, query) : []),
     [notes, query]
   );
   const matchedEvents = useMemo(
-    () => (query ? events.filter((e) => e.title.toLowerCase().includes(query)).slice(0, 5) : []),
+    () => (query ? fuzzyMatches(events, (e) => e.title, query) : []),
     [events, query]
   );
   const matchedActivity = useMemo(
-    () =>
-      query ? activities.filter((a) => a.description.toLowerCase().includes(query)).slice(0, 5) : [],
+    () => (query ? fuzzyMatches(activities, (a) => a.description, query) : []),
     [activities, query]
   );
   const prompts = useMemo(() => suggestedPrompts(context), [context]);
@@ -283,7 +300,7 @@ export function CommandPalette() {
 
           <Command.Group heading="Navigate" className={groupClass}>
             {navItems
-              .filter((item) => !query || item.label.toLowerCase().includes(query))
+              .filter((item) => !query || defaultFilter(item.label, query) > 0)
               .map((item) => (
                 <Command.Item key={item.href} onSelect={() => go(item.href)} className={itemClass}>
                   <item.icon className="h-4 w-4" />
