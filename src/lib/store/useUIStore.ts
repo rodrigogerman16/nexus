@@ -15,6 +15,7 @@ interface UIState {
   setCommandPaletteOpen: (open: boolean) => void;
   toggleCommandPalette: () => void;
   toggleSidebar: () => void;
+  setSidebarCollapsed: (collapsed: boolean) => void;
   setNotificationsOpen: (open: boolean) => void;
   setShortcutsOpen: (open: boolean) => void;
   requestQuickCreate: (target: QuickCreateTarget, seed?: string) => void;
@@ -34,6 +35,7 @@ export const useUIStore = create<UIState>()(
       toggleCommandPalette: () =>
         set({ commandPaletteOpen: !get().commandPaletteOpen }),
       toggleSidebar: () => set({ sidebarCollapsed: !get().sidebarCollapsed }),
+      setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
       setNotificationsOpen: (open) => set({ notificationsOpen: open }),
       setShortcutsOpen: (open) => set({ shortcutsOpen: open }),
       requestQuickCreate: (target, seed = "") => set({ quickCreate: target, quickCreateSeed: seed }),

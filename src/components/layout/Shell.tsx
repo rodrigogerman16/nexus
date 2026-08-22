@@ -12,6 +12,7 @@ import { TooltipProvider } from "@/components/ui/Tooltip";
 import { Toaster } from "@/components/ui/Toaster";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useHydrateStores } from "@/hooks/useHydrateStores";
+import { useAutoCollapseSidebarOnTablet } from "@/hooks/useAutoCollapseSidebarOnTablet";
 
 const AUTH_ROUTES = ["/login", "/signup"];
 
@@ -19,6 +20,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   useKeyboardShortcuts();
   useHydrateStores();
+  useAutoCollapseSidebarOnTablet();
 
   if (AUTH_ROUTES.includes(pathname)) {
     return (
