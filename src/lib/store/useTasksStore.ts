@@ -9,6 +9,7 @@ import {
   taskToDbRow,
 } from "@/lib/supabase/mappers";
 import { useActivityStore } from "@/lib/store/useActivityStore";
+import { useNotificationsStore } from "@/lib/store/useNotificationsStore";
 import { toast } from "@/lib/store/useToastStore";
 import type { Project, Task, TaskStatus } from "@/lib/store/types";
 
@@ -162,6 +163,10 @@ export const useTasksStore = create<TasksState>()((set, get) => ({
         projectId: task.projectId,
         taskId: task.id,
       });
+      useNotificationsStore.getState().addNotification({
+        type: "task_completed",
+        title: `Completed "${task.title}"`,
+      });
     }
     const userId = get().userId;
     if (userId) {
@@ -197,6 +202,10 @@ export const useTasksStore = create<TasksState>()((set, get) => ({
         description: `Completed "${moving.title}"`,
         projectId: moving.projectId,
         taskId: moving.id,
+      });
+      useNotificationsStore.getState().addNotification({
+        type: "task_completed",
+        title: `Completed "${moving.title}"`,
       });
     }
     // Persists the moved task's own status/position. Siblings' reordered
@@ -263,11 +272,19 @@ export const useTasksStore = create<TasksState>()((set, get) => ({
         description: `Updated "${project.name}" deadline`,
         projectId: id,
       });
+      useNotificationsStore.getState().addNotification({
+        type: "project_update",
+        title: `"${project.name}" deadline updated`,
+      });
     } else if (project && "status" in patch && patch.status !== project.status) {
       useActivityStore.getState().addActivity({
         type: "project_updated",
         description: `Marked "${project.name}" as ${patch.status}`,
         projectId: id,
+      });
+      useNotificationsStore.getState().addNotification({
+        type: "project_update",
+        title: `"${project.name}" marked as ${patch.status}`,
       });
     }
     const userId = get().userId;

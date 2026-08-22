@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useTasksStore } from "@/lib/store/useTasksStore";
 import { useToastStore } from "@/lib/store/useToastStore";
+import { useNotificationsStore } from "@/lib/store/useNotificationsStore";
 import { createClient } from "@/lib/supabase/client";
 
 vi.mock("@/lib/supabase/client", () => ({
@@ -24,6 +25,7 @@ function fakeSupabase(errors: { insert?: object; update?: object; delete?: objec
 beforeEach(() => {
   useTasksStore.setState({ tasks: [], projects: [], userId: null, status: "idle" });
   useToastStore.setState({ toasts: [] });
+  useNotificationsStore.setState({ notifications: [], userId: null, status: "idle" });
   vi.mocked(createClient).mockReset();
 });
 
@@ -48,10 +50,21 @@ describe("useTasksStore — signed-out (no network writes)", () => {
     expect(useTasksStore.getState().tasks).toHaveLength(0);
   });
 
-  it("setStatus marks a task completed", () => {
+  it("setStatus marks a task completed and raises a task_completed notification", () => {
     const created = useTasksStore.getState().addTask({ title: "Ship it" });
     useTasksStore.getState().setStatus(created.id, "completed");
     expect(useTasksStore.getState().tasks[0].status).toBe("completed");
+    expect(useNotificationsStore.getState().notifications[0]).toMatchObject({
+      type: "task_completed",
+      title: 'Completed "Ship it"',
+    });
+  });
+
+  it("setStatus does not re-notify when the task is already completed", () => {
+    const created = useTasksStore.getState().addTask({ title: "Already done" });
+    useTasksStore.getState().setStatus(created.id, "completed");
+    useTasksStore.getState().setStatus(created.id, "completed");
+    expect(useNotificationsStore.getState().notifications).toHaveLength(1);
   });
 
   it("moveTask reorders and reindexes positions", () => {
@@ -62,6 +75,12 @@ describe("useTasksStore — signed-out (no network writes)", () => {
     const moved = tasks.find((t) => t.id === a.id)!;
     expect(moved.status).toBe("in_progress");
     expect(tasks.every((t, i) => t.position === i)).toBe(true);
+  });
+
+  it("moveTask raises a task_completed notification when moved into completed", () => {
+    const a = useTasksStore.getState().addTask({ title: "A" });
+    useTasksStore.getState().moveTask(a.id, "completed");
+    expect(useNotificationsStore.getState().notifications[0]).toMatchObject({ type: "task_completed" });
   });
 
   it("addProject assigns a real UUID and defaults color/icon", () => {
@@ -83,6 +102,22 @@ describe("useTasksStore — signed-out (no network writes)", () => {
     const created = useTasksStore.getState().addProject({ name: "Temp" });
     useTasksStore.getState().deleteProject(created.id);
     expect(useTasksStore.getState().projects).toHaveLength(0);
+  });
+
+  it("updateProject raises a project_update notification on status change", () => {
+    const created = useTasksStore.getState().addProject({ name: "Rebrand" });
+    useTasksStore.getState().updateProject(created.id, { status: "active" });
+    expect(useTasksStore.getState().projects[0].status).toBe("active");
+    expect(useNotificationsStore.getState().notifications[0]).toMatchObject({
+      type: "project_update",
+      title: '"Rebrand" marked as active',
+    });
+  });
+
+  it("updateProject raises a project_update notification on deadline change", () => {
+    const created = useTasksStore.getState().addProject({ name: "Rebrand" });
+    useTasksStore.getState().updateProject(created.id, { deadline: "2026-12-01" });
+    expect(useNotificationsStore.getState().notifications[0]).toMatchObject({ type: "project_update" });
   });
 });
 
