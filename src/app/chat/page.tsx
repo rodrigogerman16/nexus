@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { ChatPanel } from "@/components/chat/ChatPanel";
+
+export const metadata: Metadata = { title: "Chat" };
 
 export default function ChatPage() {
   return (

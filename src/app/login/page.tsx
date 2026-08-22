@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { NexusMark } from "@/components/layout/NexusMark";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { signIn } from "@/lib/auth/actions";
+
+export const metadata: Metadata = { title: "Log in" };
 
 export default function LoginPage() {
   return (

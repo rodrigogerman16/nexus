@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NEXUS",
+  title: { default: "NEXUS", template: "%s · NEXUS" },
   description: "Your personal command center.",
 };
 
