@@ -252,6 +252,7 @@ export interface Database {
           target_per_week: number;
           completions: Record<string, boolean>;
           created_at: string;
+          updated_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["habits"]["Row"]> & {
           owner_id: string;
@@ -270,6 +271,7 @@ export interface Database {
           target_date: string | null;
           linked_habit_ids: string[];
           created_at: string;
+          updated_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["goals"]["Row"]> & {
           owner_id: string;

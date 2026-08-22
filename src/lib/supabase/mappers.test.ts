@@ -115,6 +115,7 @@ function makeHabitRow(overrides: Partial<HabitRow> = {}): HabitRow {
     target_per_week: 5,
     completions: {},
     created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
     ...overrides,
   };
 }
@@ -129,6 +130,7 @@ function makeGoalRow(overrides: Partial<GoalRow> = {}): GoalRow {
     target_date: null,
     linked_habit_ids: [],
     created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
     ...overrides,
   };
 }
