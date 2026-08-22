@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, Eye, Pencil, Pin, Trash2 } from "lucide-react";
@@ -36,7 +37,9 @@ export function NoteEditor({ note, onDeleted, onBack }: NoteEditorProps) {
   const [mode, setMode] = useState<"edit" | "preview">("edit");
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep the global AI context in sync with what's actually on screen right
   // now, not the (debounce-delayed) persisted note, so "summarize this"
@@ -49,9 +52,19 @@ export function NoteEditor({ note, onDeleted, onBack }: NoteEditorProps) {
   // useState calls re-initialize) whenever a different note is selected.
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    const dirty = title !== note.title || content !== note.content;
+    if (dirty) setSaveState("saving");
     debounceRef.current = setTimeout(() => {
-      if (title !== note.title || content !== note.content) {
+      if (dirty) {
         updateNote(note.id, { title, content });
+        // Spec §37 names "Note saved" as its own toast example, but notes
+        // autosave on every debounced keystroke pause — a toast per pause
+        // would spam the corner of the screen while someone is just typing.
+        // A quiet inline indicator gives the same "yes, this is saved"
+        // confirmation without that noise.
+        setSaveState("saved");
+        if (savedResetRef.current) clearTimeout(savedResetRef.current);
+        savedResetRef.current = setTimeout(() => setSaveState("idle"), 2000);
       }
     }, 400);
     return () => {
@@ -59,6 +72,13 @@ export function NoteEditor({ note, onDeleted, onBack }: NoteEditorProps) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, content]);
+
+  useEffect(
+    () => () => {
+      if (savedResetRef.current) clearTimeout(savedResetRef.current);
+    },
+    []
+  );
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
@@ -79,6 +99,20 @@ export function NoteEditor({ note, onDeleted, onBack }: NoteEditorProps) {
             placeholder="Untitled"
             className="focus-ring min-w-0 flex-1 rounded-md bg-transparent px-1 text-lg font-semibold text-foreground outline-none"
           />
+          <AnimatePresence mode="wait">
+            {saveState !== "idle" && (
+              <motion.span
+                key={saveState}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="shrink-0 text-xs text-muted-foreground"
+              >
+                {saveState === "saving" ? "Saving…" : "Saved"}
+              </motion.span>
+            )}
+          </AnimatePresence>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button
