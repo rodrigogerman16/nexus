@@ -6,9 +6,11 @@ import { useNotesStore } from "@/lib/store/useNotesStore";
 import { useUIStore } from "@/lib/store/useUIStore";
 import { NoteList } from "@/components/notes/NoteList";
 import { NoteEditor } from "@/components/notes/NoteEditor";
+import { NotesSkeleton } from "@/components/notes/NotesSkeleton";
 
 export default function NotesPage() {
   const notes = useNotesStore((s) => s.notes);
+  const syncStatus = useNotesStore((s) => s.status);
   const addNote = useNotesStore((s) => s.addNote);
   const quickCreate = useUIStore((s) => s.quickCreate);
   const clearQuickCreate = useUIStore((s) => s.clearQuickCreate);
@@ -51,6 +53,10 @@ export default function NotesPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quickCreate, clearQuickCreate]);
+
+  if (syncStatus === "idle" || syncStatus === "loading") {
+    return <NotesSkeleton />;
+  }
 
   return (
     <div className="flex h-full min-h-0">

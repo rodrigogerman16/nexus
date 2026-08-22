@@ -15,6 +15,7 @@ import { MonthView } from "@/components/life/MonthView";
 import { DayView } from "@/components/life/DayView";
 import { DayAgenda } from "@/components/life/DayAgenda";
 import { CalendarAssistant } from "@/components/life/CalendarAssistant";
+import { CalendarSkeleton } from "@/components/life/CalendarSkeleton";
 import type { CalendarEvent } from "@/lib/store/types";
 
 type ViewMode = "month" | "week" | "day";
@@ -26,6 +27,7 @@ export function CalendarView() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | undefined>(undefined);
   const events = useLifeStore((s) => s.events);
+  const syncStatus = useLifeStore((s) => s.status);
   const tasks = useTasksStore((s) => s.tasks);
   const setAIContext = useAIContextStore((s) => s.setContext);
 
@@ -86,6 +88,10 @@ export function CalendarView() {
     .filter((e) => isSameDay(e.start, selected))
     .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
   const selectedDayTasks = tasks.filter((t) => t.dueDate && isSameDay(t.dueDate, selected));
+
+  if (syncStatus === "idle" || syncStatus === "loading") {
+    return <CalendarSkeleton />;
+  }
 
   return (
     <div>

@@ -8,11 +8,13 @@ import { Button } from "@/components/ui/Button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { ProjectDialog } from "@/components/projects/ProjectDialog";
+import { ProjectsSkeleton } from "@/components/projects/ProjectsSkeleton";
 import { statusConfig, statusOrder } from "@/components/projects/projectMeta";
 import type { ProjectStatus } from "@/lib/store/types";
 
 export default function ProjectsPage() {
   const projects = useTasksStore((s) => s.projects);
+  const syncStatus = useTasksStore((s) => s.status);
   const [filter, setFilter] = useState<"all" | ProjectStatus>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [initialName, setInitialName] = useState("");
@@ -36,6 +38,10 @@ export default function ProjectsPage() {
       clearQuickCreate();
     }
   }, [quickCreate, quickCreateSeed, clearQuickCreate]);
+
+  if (syncStatus === "idle" || syncStatus === "loading") {
+    return <ProjectsSkeleton />;
+  }
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-6">

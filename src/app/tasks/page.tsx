@@ -17,6 +17,7 @@ import {
 import { TaskListView } from "@/components/tasks/TaskListView";
 import { KanbanBoard } from "@/components/tasks/KanbanBoard";
 import { TaskDialog, type TaskDraft } from "@/components/tasks/TaskDialog";
+import { TasksSkeleton } from "@/components/tasks/TasksSkeleton";
 import { priorityOrder, statusOrder } from "@/components/tasks/taskMeta";
 import { parseTaskInput } from "@/lib/ai/parseTaskInput";
 import { useAIContextStore } from "@/lib/ai/context";
@@ -25,6 +26,7 @@ import type { Task } from "@/lib/store/types";
 export default function TasksPage() {
   const tasks = useTasksStore((s) => s.tasks);
   const projects = useTasksStore((s) => s.projects);
+  const syncStatus = useTasksStore((s) => s.status);
   const setAIContext = useAIContextStore((s) => s.setContext);
 
   useEffect(() => {
@@ -98,6 +100,15 @@ export default function TasksPage() {
       clearQuickCreate();
     }
   }, [quickCreate, quickCreateSeed, clearQuickCreate]);
+
+  // Distinct from src/app/tasks/loading.tsx: that covers Next's route-level
+  // Suspense boundary (route code loading, effectively instant once
+  // cached), not the real client-side Supabase fetch this page's data
+  // actually depends on. Without this, the page fell through to "No tasks
+  // here" while that fetch was still in flight.
+  if (syncStatus === "idle" || syncStatus === "loading") {
+    return <TasksSkeleton />;
+  }
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-6">
