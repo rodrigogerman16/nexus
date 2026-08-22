@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useToastStore } from "@/lib/store/useToastStore";
 
 const generateContextualResponse = vi.fn();
 vi.mock("@/lib/ai/service", () => ({
@@ -19,6 +20,10 @@ vi.mock("@/lib/ai/promptContext", () => ({
 const { askNexus } = await import("@/lib/ai/ask");
 
 const CONTEXT = { type: "dashboard" } as const;
+
+beforeEach(() => {
+  useToastStore.setState({ toasts: [] });
+});
 
 afterEach(() => {
   vi.useRealTimers();
@@ -98,5 +103,11 @@ describe("askNexus — real provider mode", () => {
     await vi.advanceTimersByTimeAsync(3000);
 
     expect(onDone).toHaveBeenCalledWith({ content: "Fallback answer", actions: undefined });
+    // Spec §36/§37: falling back silently still leaves the user without any
+    // indication their answer didn't come from the real model.
+    expect(useToastStore.getState().toasts[0]).toMatchObject({
+      variant: "error",
+      message: expect.stringContaining("AI unavailable"),
+    });
   });
 });

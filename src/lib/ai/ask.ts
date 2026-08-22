@@ -2,6 +2,7 @@ import { streamText } from "@/lib/mock/ai";
 import { generateContextualResponse } from "@/lib/ai/service";
 import { buildSystemPrompt } from "@/lib/ai/promptContext";
 import { isRealProviderEnabled, streamRealResponse } from "@/lib/ai/realProvider";
+import { toast } from "@/lib/store/useToastStore";
 import type { AIContext } from "@/lib/ai/context";
 import type { ChatActionChip } from "@/lib/store/types";
 
@@ -58,6 +59,11 @@ export function askNexus(input: string, context: AIContext, handlers: AskHandler
     .catch((error) => {
       if (controller.signal.aborted) return;
       console.error("Real AI provider failed, falling back to mock:", error);
+      // Spec §36/§37's own named example is a "⚠ AI unavailable" toast —
+      // silently swapping in the mock provider kept the app working, but
+      // the user had no way to know their answer just came from a much
+      // simpler fallback engine instead of the real model.
+      toast.error("AI unavailable — showing offline suggestions instead.");
       runMock(input, context, handlers);
     });
 
