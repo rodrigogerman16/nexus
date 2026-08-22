@@ -1,17 +1,37 @@
 "use client";
 
 import { AnimatePresence } from "framer-motion";
+import { ListTodo, Plus } from "lucide-react";
 import type { Task } from "@/lib/store/types";
 import { useTasksStore } from "@/lib/store/useTasksStore";
 import { TaskCard } from "@/components/tasks/TaskCard";
+import { Button } from "@/components/ui/Button";
 
 interface TaskListViewProps {
   tasks: Task[];
   onEdit: (task: Task) => void;
+  onCreate: () => void;
   groupByProject?: boolean;
 }
 
-export function TaskListView({ tasks, onEdit, groupByProject }: TaskListViewProps) {
+function EmptyTasks({ onCreate }: { onCreate: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 rounded-md border border-dashed border-border py-20 text-center">
+      <ListTodo className="h-8 w-8 text-muted-foreground" />
+      <div>
+        <p className="text-sm font-medium">No tasks here</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Add a task and NEXUS will help you stay on top of it.
+        </p>
+      </div>
+      <Button onClick={onCreate} size="sm" className="gap-1.5">
+        <Plus className="h-4 w-4" /> New task
+      </Button>
+    </div>
+  );
+}
+
+export function TaskListView({ tasks, onEdit, onCreate, groupByProject }: TaskListViewProps) {
   const projects = useTasksStore((s) => s.projects);
 
   if (!groupByProject) {
@@ -22,11 +42,7 @@ export function TaskListView({ tasks, onEdit, groupByProject }: TaskListViewProp
             <TaskCard key={task.id} task={task} onEdit={onEdit} />
           ))}
         </AnimatePresence>
-        {tasks.length === 0 && (
-          <p className="py-12 text-center text-sm text-muted-foreground">
-            No tasks here. Enjoy the quiet.
-          </p>
-        )}
+        {tasks.length === 0 && <EmptyTasks onCreate={onCreate} />}
       </div>
     );
   }
@@ -77,11 +93,7 @@ export function TaskListView({ tasks, onEdit, groupByProject }: TaskListViewProp
           </div>
         </div>
       )}
-      {tasks.length === 0 && (
-        <p className="py-12 text-center text-sm text-muted-foreground">
-          No tasks here. Enjoy the quiet.
-        </p>
-      )}
+      {tasks.length === 0 && <EmptyTasks onCreate={onCreate} />}
     </div>
   );
 }

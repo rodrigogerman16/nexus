@@ -177,7 +177,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             <Plus className="h-4 w-4" /> Add task
           </Button>
         </div>
-        <TaskListView tasks={projectTasks} onEdit={openEditTask} />
+        <TaskListView tasks={projectTasks} onEdit={openEditTask} onCreate={openNewTask} />
       </div>
 
       <div className="mb-8">

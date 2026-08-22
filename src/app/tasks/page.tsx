@@ -162,7 +162,12 @@ export default function TasksPage() {
       </div>
 
       {view === "list" ? (
-        <TaskListView tasks={sortedTasks} onEdit={openEditTask} groupByProject={projectFilter === "all"} />
+        <TaskListView
+          tasks={sortedTasks}
+          onEdit={openEditTask}
+          onCreate={openNewTask}
+          groupByProject={projectFilter === "all"}
+        />
       ) : (
         <KanbanBoard tasks={filteredTasks} onEdit={openEditTask} />
       )}
